@@ -3,28 +3,6 @@ import tensorflow as tf
 import tensorflow_addons as tfa
 
 
-class ClassToken(tf.keras.layers.Layer):
-    """Append a class token to an input layer."""
-
-    def build(self, input_shape):
-        cls_init = tf.zeros_initializer()
-        self.hidden_size = input_shape[-1]
-        self.cls = tf.Variable(
-            name="cls",
-            initial_value=cls_init(
-                shape=(1, 1, self.hidden_size), dtype="float32"),
-            trainable=True,
-        )
-
-    def call(self, inputs):
-        batch_size = tf.shape(inputs)[0]
-        cls_broadcasted = tf.cast(
-            tf.broadcast_to(self.cls, [batch_size, 1, self.hidden_size]),
-            dtype=inputs.dtype,
-        )
-        return tf.concat([cls_broadcasted, inputs], 1)
-
-
 class AddPositionEmbs(tf.keras.layers.Layer):
     """Adds (optionally learned) positional embeddings to the inputs."""
 
