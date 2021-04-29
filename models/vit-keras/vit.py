@@ -1,4 +1,3 @@
-# type: ignore
 import warnings
 import tensorflow as tf
 import layers, utils
