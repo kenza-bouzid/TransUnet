@@ -71,9 +71,10 @@ def apply_embedding_weights(target_layer, source_weights):
             resized as necessary.
     """
     expected_shape = target_layer.weights[0].shape
-    # if expected_shape ==  source_weights.shape:
-    #     grid = source_weights
-    # elif 
+    if expected_shape ==  source_weights.shape:
+        grid = source_weights
+    elif expected_shape[1] == source_weights.shape[1]-1:
+        grid = source_weights[:, 1:]
     if expected_shape != source_weights.shape:
         _, grid = source_weights[0, :1], source_weights[0, 1:]
         sin = int(np.sqrt(grid.shape[0]))
@@ -100,7 +101,7 @@ def load_weights_numpy(model, params_path, pretrained_top):
         params_path, allow_pickle=False
     )  # pylint: disable=unexpected-keyword-arg
     source_keys = list(params_dict.keys())
-    pre_logits = any(l.name == "pre_logits" for l in model.layers)
+    
     source_keys_used = []
     n_transformers = len(
         set(
@@ -163,18 +164,15 @@ def load_weights_numpy(model, params_path, pretrained_top):
                 ]
             ]
         )
-    for layer_name in ["embedding", "head", "pre_logits"]:
-        if layer_name == "head" and not pretrained_top:
-            source_keys_used.extend(["head/kernel", "head/bias"])
-            continue
-        if layer_name == "pre_logits" and not pre_logits:
-            continue
-        matches.append(
-            {
-                "layer": model.get_layer(layer_name),
-                "keys": [f"{layer_name}/{name}" for name in ["kernel", "bias"]],
-            }
-        )
+        
+    # Embedding kernel and bias
+    matches.append(
+        {
+            "layer": model.get_layer("embedding"),
+            "keys": [f"embedding/{name}" for name in ["kernel", "bias"]],
+        }
+    )
+
     matches.append(
         {
             "layer": model.get_layer("Transformer/encoder_norm"),

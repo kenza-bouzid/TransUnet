@@ -85,14 +85,6 @@ def build_model(
     y = tf.keras.layers.LayerNormalization(
         epsilon=1e-6, name="Transformer/encoder_norm"
     )(y)
-    y = tf.keras.layers.Lambda(lambda v: v[:, 0], name="ExtractToken")(y)
-    if representation_size is not None:
-        y = tf.keras.layers.Dense(
-            representation_size, name="pre_logits", activation="tanh"
-        )(y)
-    if include_top:
-        y = tf.keras.layers.Dense(
-            classes, name="head", activation=activation)(y)
     return tf.keras.models.Model(inputs=x, outputs=y, name=name)
 
 
