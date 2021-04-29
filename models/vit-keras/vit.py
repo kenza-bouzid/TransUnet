@@ -1,7 +1,7 @@
 # type: ignore
 import warnings
 import tensorflow as tf
-from . import layers, utils
+import layers, utils
 
 CONFIG_B = {
     "dropout": 0.1,
@@ -74,7 +74,6 @@ def build_model(
         name="embedding",
     )(x)
     y = tf.keras.layers.Reshape((y.shape[1] * y.shape[2], hidden_size))(y)
-    y = layers.ClassToken(name="class_token")(y)
     y = layers.AddPositionEmbs(name="Transformer/posembed_input")(y)
     for n in range(num_layers):
         y, _ = layers.TransformerBlock(

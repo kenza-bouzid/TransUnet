@@ -71,20 +71,21 @@ def apply_embedding_weights(target_layer, source_weights):
             resized as necessary.
     """
     expected_shape = target_layer.weights[0].shape
+    # if expected_shape ==  source_weights.shape:
+    #     grid = source_weights
+    # elif 
     if expected_shape != source_weights.shape:
-        token, grid = source_weights[0, :1], source_weights[0, 1:]
+        _, grid = source_weights[0, :1], source_weights[0, 1:]
         sin = int(np.sqrt(grid.shape[0]))
-        sout = int(np.sqrt(expected_shape[1] - 1))
+        sout = int(np.sqrt(expected_shape[1]))
         warnings.warn(
             "Resizing position embeddings from " f"{sin} to {sout}",
             UserWarning,
         )
         zoom = (sout / sin, sout / sin, 1)
         grid = sp.ndimage.zoom(grid.reshape(sin, sin, -1), zoom, order=1).reshape(
-            sout * sout, -1
-        )
-        source_weights = np.concatenate([token, grid], axis=0)[np.newaxis]
-    target_layer.set_weights([source_weights])
+            1, sout * sout, -1)
+    target_layer.set_weights([grid])
 
 
 def load_weights_numpy(model, params_path, pretrained_top):
@@ -174,7 +175,6 @@ def load_weights_numpy(model, params_path, pretrained_top):
                 "keys": [f"{layer_name}/{name}" for name in ["kernel", "bias"]],
             }
         )
-    matches.append({"layer": model.get_layer("class_token"), "keys": ["cls"]})
     matches.append(
         {
             "layer": model.get_layer("Transformer/encoder_norm"),
