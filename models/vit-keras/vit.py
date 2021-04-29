@@ -1,6 +1,11 @@
 import warnings
 import tensorflow as tf
+from tensorflow.python.ops.math_ops import saturate_cast
 import layers, utils
+
+tfk = tf.keras
+tfkl = tfk.layers
+tfm = tf.math
 
 CONFIG_B = {
     "dropout": 0.1,
@@ -158,3 +163,69 @@ def vit_l32(
             size="L_32", weights=weights, model=model
         )
     return model
+
+class SegmentationHead(tfk.Sequential):
+    def __init__(self, name, filters, kernel_size, upsampling=1):
+        conv = tfkl.Conv2D(filters=filters, kernel_size=kernel_size, padding="same")
+        upsampling = tfkl.UpSampling2D(size=upsampling, interpolation="bilinear")
+        layers = [conv, upsampling]
+        super(SegmentationHead, self).__init__(layers=layers, name=name)
+
+
+CONFIG_SEG_HEAD = {
+    "name": "None",
+    "filters": 8,
+    "kernel_size": 1,
+    "upsampling": 16
+}
+
+class TransUnet(tfk.Model):
+    def __init__(self, image_size=512, *args, **kwargs):
+        super(TransUnet, self).__init__(*args, **kwargs)
+        self.encoder = vit_b16(image_size=image_size)
+        self.encoder.trainable = False 
+        self.seg_head = SegmentationHead(**CONFIG_SEG_HEAD)
+
+    def call(self, inputs):
+        y = self.encoder(inputs)
+        print("Encoder", tf.shape(y))
+        logits = self.seg_head(y)
+        return logits
+    
+    @staticmethod
+    def segmentation_loss(y_true, y_pred):
+        cross_entropy_loss = tf.losses.categorical_crossentropy(y_true=y_true, y_pred=y_pred, from_logits=True)
+        dice_loss = TransUnet.gen_dice(y_true, y_pred)
+        return 0.5 * cross_entropy_loss + 0.5 * dice_loss
+        
+    @staticmethod
+    def gen_dice(y_true, y_pred, eps=1e-6):
+        """both tensors are [b, h, w, classes] and y_pred is in logit form"""
+
+        # [b, h, w, classes]
+        pred_tensor = tf.nn.softmax(y_pred)
+        y_true_shape = tf.shape(y_true)
+
+        # [b, h*w, classes]
+        y_true = tf.reshape(y_true, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
+        y_pred = tf.reshape(pred_tensor, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
+
+        # [b, classes]
+        # count how many of each class are present in 
+        # each image, if there are zero, then assign
+        # them a fixed weight of eps
+        counts = tf.reduce_sum(y_true, axis=1)
+        weights = 1. / (counts ** 2)
+        weights = tf.where(tf.math.is_finite(weights), weights, eps)
+
+        multed = tf.reduce_sum(y_true * y_pred, axis=1)
+        summed = tf.reduce_sum(y_true + y_pred, axis=1)
+
+        # [b]
+        numerators = tf.reduce_sum(weights*multed, axis=-1)
+        denom = tf.reduce_sum(weights*summed, axis=-1)
+        dices = 1. - 2. * numerators / denom
+        dices = tf.where(tf.math.is_finite(dices), dices, tf.zeros_like(dices))
+        return tf.reduce_mean(dices)
+
+
