@@ -89,13 +89,12 @@ def apply_embedding_weights(target_layer, source_weights):
     target_layer.set_weights([grid])
 
 
-def load_weights_numpy(model, params_path, pretrained_top):
+def load_weights_numpy(model, params_path):
     """Load weights saved using Flax as a numpy array.
 
     Args:
         model: A Keras model to load the weights into.
         params_path: Filepath to a numpy archive.
-        pretrained_top: Whether to load the top layer weights.
     """
     params_dict = np.load(
         params_path, allow_pickle=False
@@ -164,7 +163,7 @@ def load_weights_numpy(model, params_path, pretrained_top):
                 ]
             ]
         )
-        
+
     # Embedding kernel and bias
     matches.append(
         {
