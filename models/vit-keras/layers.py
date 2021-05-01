@@ -5,6 +5,8 @@ import tensorflow_addons as tfa
 
 class AddPositionEmbs(tf.keras.layers.Layer):
     """Adds (optionally learned) positional embeddings to the inputs."""
+    def __init__(self, trainable=False, **kwargs):
+        super().__init__(trainable=trainable, **kwargs)
 
     def build(self, input_shape):
         assert (
@@ -24,8 +26,8 @@ class AddPositionEmbs(tf.keras.layers.Layer):
 
 
 class MultiHeadSelfAttention(tf.keras.layers.Layer):
-    def __init__(self, *args, num_heads, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, trainable=False, num_heads, **kwargs):
+        super().__init__(trainable=trainable, *args, **kwargs)
         self.num_heads = num_heads
 
     def build(self, input_shape):
@@ -76,8 +78,8 @@ class MultiHeadSelfAttention(tf.keras.layers.Layer):
 class TransformerBlock(tf.keras.layers.Layer):
     """Implements a Transformer block."""
 
-    def __init__(self, *args, num_heads, mlp_dim, dropout, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, num_heads, mlp_dim, dropout, trainable=False, **kwargs):
+        super().__init__(*args, trainable=trainable, **kwargs)
         self.num_heads = num_heads
         self.mlp_dim = mlp_dim
         self.dropout = dropout

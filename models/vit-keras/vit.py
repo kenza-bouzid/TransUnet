@@ -1,7 +1,9 @@
 import warnings
 import tensorflow as tf
 from tensorflow.python.ops.math_ops import saturate_cast
-import layers, utils
+import layers
+import utils
+import numpy as np
 
 tfk = tf.keras
 tfkl = tfk.layers
@@ -64,6 +66,7 @@ def build_model(
         strides=patch_size,
         padding="valid",
         name="embedding",
+        trainable=False
     )(x)
     y = tf.keras.layers.Reshape((y.shape[1] * y.shape[2], hidden_size))(y)
     y = layers.AddPositionEmbs(name="Transformer/posembed_input")(y)
@@ -77,8 +80,11 @@ def build_model(
     y = tf.keras.layers.LayerNormalization(
         epsilon=1e-6, name="Transformer/encoder_norm"
     )(y)
-
+    n_patch_sqrt = (image_size//patch_size)
+    y = tf.keras.layers.Reshape(target_shape=[n_patch_sqrt, n_patch_sqrt, hidden_size])(y)
+    y = SegmentationHead(**CONFIG_SEG_HEAD)(y)
     return tf.keras.models.Model(inputs=x, outputs=y, name=name)
+
 
 def load_pretrained(size, weights, model):
     """Load model weights for a known configuration."""
@@ -164,68 +170,85 @@ def vit_l32(
         )
     return model
 
-class SegmentationHead(tfk.Sequential):
-    def __init__(self, name, filters, kernel_size, upsampling=1):
-        conv = tfkl.Conv2D(filters=filters, kernel_size=kernel_size, padding="same")
-        upsampling = tfkl.UpSampling2D(size=upsampling, interpolation="bilinear")
-        layers = [conv, upsampling]
-        super(SegmentationHead, self).__init__(layers=layers, name=name)
+
+class SegmentationHead(tfkl.Layer):
+    def __init__(self, name="seg_head", filters=9, kernel_size=1, upsampling_factor=16, ** kwargs):
+        super(SegmentationHead, self).__init__(name=name, **kwargs)
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.upsampling_factor = upsampling_factor
+
+    def build(self, input_shape):
+        self.conv = tfkl.Conv2D(
+            filters=self.filters, kernel_size=self.kernel_size, padding="same")
+        self.upsampling = tfkl.UpSampling2D(
+            size=self.upsampling_factor, interpolation="bilinear")
+
+    def call(self, inputs):
+        conv = self.conv(inputs)
+        up = self.upsampling(conv)
+        return up 
 
 
 CONFIG_SEG_HEAD = {
     "name": "None",
-    "filters": 8,
+    "filters": 9,
     "kernel_size": 1,
-    "upsampling": 16
+    "upsampling_factor": 16
 }
+
 
 class TransUnet(tfk.Model):
     def __init__(self, image_size=512, *args, **kwargs):
         super(TransUnet, self).__init__(*args, **kwargs)
         self.encoder = vit_b16(image_size=image_size)
-        self.encoder.trainable = False 
+        self.encoder.trainable = False
         self.seg_head = SegmentationHead(**CONFIG_SEG_HEAD)
-
+    
     def call(self, inputs):
         y = self.encoder(inputs)
-        print("Encoder", tf.shape(y))
+        B, n_patch, hidden = tf.shape(y)
+        h, w = int(np.sqrt(n_patch)), int(np.sqrt(n_patch))
+        y = tf.reshape(y, [B, h, w, hidden])
         logits = self.seg_head(y)
         return logits
-    
-    @staticmethod
-    def segmentation_loss(y_true, y_pred):
-        cross_entropy_loss = tf.losses.categorical_crossentropy(y_true=y_true, y_pred=y_pred, from_logits=True)
-        dice_loss = TransUnet.gen_dice(y_true, y_pred)
-        return 0.5 * cross_entropy_loss + 0.5 * dice_loss
-        
-    @staticmethod
-    def gen_dice(y_true, y_pred, eps=1e-6):
-        """both tensors are [b, h, w, classes] and y_pred is in logit form"""
 
-        # [b, h, w, classes]
-        pred_tensor = tf.nn.softmax(y_pred)
-        y_true_shape = tf.shape(y_true)
+@tf.function
+def segmentation_loss(y_true, y_pred):
+    cross_entropy_loss = tf.losses.categorical_crossentropy(
+        y_true=y_true, y_pred=y_pred, from_logits=True)
+    dice_loss = gen_dice(y_true, y_pred)
+    return 0.5 * cross_entropy_loss + 0.5 * dice_loss
 
-        # [b, h*w, classes]
-        y_true = tf.reshape(y_true, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
-        y_pred = tf.reshape(pred_tensor, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
+@tf.function
+def gen_dice(y_true, y_pred, eps=1e-6):
+    """both tensors are [b, h, w, classes] and y_pred is in logit form"""
 
-        # [b, classes]
-        # count how many of each class are present in 
-        # each image, if there are zero, then assign
-        # them a fixed weight of eps
-        counts = tf.reduce_sum(y_true, axis=1)
-        weights = 1. / (counts ** 2)
-        weights = tf.where(tf.math.is_finite(weights), weights, eps)
+    # [b, h, w, classes]
+    pred_tensor = tf.nn.softmax(y_pred)
+    y_true_shape = tf.shape(y_true)
 
-        multed = tf.reduce_sum(y_true * y_pred, axis=1)
-        summed = tf.reduce_sum(y_true + y_pred, axis=1)
+    # [b, h*w, classes]
+    y_true = tf.reshape(
+        y_true, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
+    y_pred = tf.reshape(
+        pred_tensor, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
 
-        # [b]
-        numerators = tf.reduce_sum(weights*multed, axis=-1)
-        denom = tf.reduce_sum(weights*summed, axis=-1)
-        dices = 1. - 2. * numerators / denom
-        dices = tf.where(tf.math.is_finite(dices), dices, tf.zeros_like(dices))
-        return tf.reduce_mean(dices)
+    # [b, classes]
+    # count how many of each class are present in
+    # each image, if there are zero, then assign
+    # them a fixed weight of eps
+    counts = tf.reduce_sum(y_true, axis=1)
+    weights = 1. / (counts ** 2)
+    weights = tf.where(tf.math.is_finite(weights), weights, eps)
 
+    multed = tf.reduce_sum(y_true * y_pred, axis=1)
+    summed = tf.reduce_sum(y_true + y_pred, axis=1)
+
+    # [b]
+    numerators = tf.reduce_sum(weights*multed, axis=-1)
+    denom = tf.reduce_sum(weights*summed, axis=-1)
+    dices = 1. - 2. * numerators / denom
+    dices = tf.where(tf.math.is_finite(dices), dices, tf.zeros_like(dices))
+    return tf.reduce_mean(dices)
 
