@@ -16,22 +16,6 @@ def preprocess_inputs(X):
         X, data_format=None, mode="tf"
     )
 
-CONFIG_B = {
-    "dropout": 0.1,
-    "mlp_dim": 3072,
-    "num_heads": 12,
-    "num_layers": 12,
-    "hidden_size": 768,
-}
-
-CONFIG_L = {
-    "dropout": 0.1,
-    "mlp_dim": 4096,
-    "num_heads": 16,
-    "num_layers": 24,
-    "hidden_size": 1024,
-}
-
 BASE_URL = "https://github.com/faustomorales/vit-keras/releases/download/dl"
 WEIGHTS = {"imagenet21k": 21_843, "imagenet21k+imagenet2012": 1_000}
 WEIGHTS = "imagenet21k+imagenet2012"
