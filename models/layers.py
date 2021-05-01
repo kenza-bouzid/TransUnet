@@ -48,19 +48,19 @@ class AddPositionEmbs(tfkl.Layer):
 
 
 class MultiHeadSelfAttention(tfkl.Layer):
-    def __init__(self, *args, trainable=False, num_heads, **kwargs):
+    def __init__(self, *args, trainable=False, n_heads, **kwargs):
         super().__init__(trainable=trainable, *args, **kwargs)
-        self.num_heads = num_heads
+        self.n_heads = n_heads
 
     def build(self, input_shape):
         hidden_size = input_shape[-1]
-        num_heads = self.num_heads
-        if hidden_size % num_heads != 0:
+        n_heads = self.n_heads
+        if hidden_size % n_heads != 0:
             raise ValueError(
-                f"embedding dimension = {hidden_size} should be divisible by number of heads = {num_heads}"
+                f"embedding dimension = {hidden_size} should be divisible by number of heads = {n_heads}"
             )
         self.hidden_size = hidden_size
-        self.projection_dim = hidden_size // num_heads
+        self.projection_dim = hidden_size // n_heads
         self.query_dense = tf.keras.layers.Dense(hidden_size, name="query")
         self.key_dense = tf.keras.layers.Dense(hidden_size, name="key")
         self.value_dense = tf.keras.layers.Dense(hidden_size, name="value")
@@ -77,7 +77,7 @@ class MultiHeadSelfAttention(tfkl.Layer):
 
     def separate_heads(self, x, batch_size):
         x = tf.reshape(
-            x, (batch_size, -1, self.num_heads, self.projection_dim))
+            x, (batch_size, -1, self.n_heads, self.projection_dim))
         return tf.transpose(x, perm=[0, 2, 1, 3])
 
     def call(self, inputs):
@@ -100,15 +100,15 @@ class MultiHeadSelfAttention(tfkl.Layer):
 class TransformerBlock(tfkl.Layer):
     """Implements a Transformer block."""
 
-    def __init__(self, *args, num_heads, mlp_dim, dropout, trainable=False, **kwargs):
+    def __init__(self, *args, n_heads, mlp_dim, dropout, trainable=False, **kwargs):
         super().__init__(*args, trainable=trainable, **kwargs)
-        self.num_heads = num_heads
+        self.n_heads = n_heads
         self.mlp_dim = mlp_dim
         self.dropout = dropout
 
     def build(self, input_shape):
         self.att = MultiHeadSelfAttention(
-            num_heads=self.num_heads,
+            n_heads=self.n_heads,
             name="MultiHeadDotProductAttention_1",
         )
         self.mlpblock = tf.keras.Sequential(
