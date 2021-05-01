@@ -1,9 +1,7 @@
-import warnings
 import tensorflow as tf
-from tensorflow.python.ops.math_ops import saturate_cast
-import layers
-import utils
 import numpy as np
+import models.layers as layers
+import models.utils as utils
 
 tfk = tf.keras
 tfkl = tfk.layers
@@ -82,7 +80,7 @@ def build_model(
     )(y)
     n_patch_sqrt = (image_size//patch_size)
     y = tf.keras.layers.Reshape(target_shape=[n_patch_sqrt, n_patch_sqrt, hidden_size])(y)
-    y = SegmentationHead(**CONFIG_SEG_HEAD)(y)
+    y = layers.SegmentationHead(**CONFIG_SEG_HEAD)(y)
     return tf.keras.models.Model(inputs=x, outputs=y, name=name)
 
 
@@ -171,23 +169,6 @@ def vit_l32(
     return model
 
 
-class SegmentationHead(tfkl.Layer):
-    def __init__(self, name="seg_head", filters=9, kernel_size=1, upsampling_factor=16, ** kwargs):
-        super(SegmentationHead, self).__init__(name=name, **kwargs)
-        self.filters = filters
-        self.kernel_size = kernel_size
-        self.upsampling_factor = upsampling_factor
-
-    def build(self, input_shape):
-        self.conv = tfkl.Conv2D(
-            filters=self.filters, kernel_size=self.kernel_size, padding="same")
-        self.upsampling = tfkl.UpSampling2D(
-            size=self.upsampling_factor, interpolation="bilinear")
-
-    def call(self, inputs):
-        conv = self.conv(inputs)
-        up = self.upsampling(conv)
-        return up 
 
 
 CONFIG_SEG_HEAD = {

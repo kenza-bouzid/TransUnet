@@ -194,13 +194,5 @@ def load_weights_numpy(model, params_path):
                 )
             ]
         match["layer"].set_weights(source_weights)
-    unused = set(source_keys).difference(source_keys_used)
-    if unused:
-        warnings.warn(
-            f"Did not use the following weights: {unused}", UserWarning)
-    target_keys_set = len(source_keys_used)
-    target_keys_all = len(model.weights)
-    if target_keys_set < target_keys_all:
-        warnings.warn(
-            f"Only set {target_keys_set} of {target_keys_all} weights.", UserWarning
-        )
+
+    
