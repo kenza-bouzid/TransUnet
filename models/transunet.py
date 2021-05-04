@@ -74,7 +74,7 @@ class TransUnet():
         y = layers.SegmentationHead(
             filters=self.filters, kernel_size=self.kernel_size, upsampling_factor=self.upsampling_factor)(y)
 
-        return tf.keras.models.Model(inputs=x, outputs=y, name=self.name)
+        return tfk.models.Model(inputs=x, outputs=y, name=self.name)
 
     def load_pretrained(self):
         """Load model weights for a known configuration."""
