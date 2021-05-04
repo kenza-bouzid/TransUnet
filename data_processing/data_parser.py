@@ -66,9 +66,42 @@ class DataWriter():
             self.write_image_to_tfr(image, label, filename)
 
 class DataReader():
-    def __init__(self):
-        def __init__(self, src_path):
-            self.src_path = src_path
+
+    def __init__(self, src_path):
+        self.src_path = src_path
+    
+        self.filenames = [f for f in listdir(
+            src_path) if isfile(join(src_path, f))]
+
+    def parse_tfr_element(self, element):
+        data = {
+            'label':tf.io.FixedLenFeature([], tf.string),
+            'image' : tf.io.FixedLenFeature([], tf.string),
+            }
+
+            
+        content = tf.io.parse_single_example(element, data)
+        raw_label = content['label']
+        raw_image = content['image']
         
-            self.filenames = [f for f in listdir(
-                src_path) if isfile(join(src_path, f))]
+        
+        image = tf.io.parse_tensor(raw_image, out_type=tf.float32)
+        image = tf.reshape(image, shape=[HEIGHT,WIDTH,DEPTH])
+
+        label = tf.io.parse_tensor(raw_label, out_type=tf.float32)
+        label = tf.reshape(label, shape=[HEIGHT,WIDTH])
+        label = tf.cast(label, tf.int32)
+        label = tf.one_hot(label, depth=9)
+        return (image, label)
+
+    def get_dataset_small(self, filenames=None):
+        #create the dataset
+        filenames = self.filenames if filenames is not None else filenames
+        dataset = tf.data.TFRecordDataset(filenames)
+
+        #pass every single feature through our mapping function
+        dataset = dataset.map(
+            self.parse_tfr_element
+        )
+            
+        return dataset
