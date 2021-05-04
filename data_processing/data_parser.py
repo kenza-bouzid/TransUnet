@@ -62,6 +62,13 @@ class DataWriter():
         for file in tqdm(self.filenames):
             data = np.load(self.src_path + file)
             image, label = data['image'], data['label']
-            filename = file[:-3] + "tfrecords"
+            filename = self.dest_path + file[:-3] + "tfrecords"
             self.write_image_to_tfr(image, label, filename)
 
+class DataReader():
+    def __init__(self):
+        def __init__(self, src_path):
+            self.src_path = src_path
+        
+            self.filenames = [f for f in listdir(
+                src_path) if isfile(join(src_path, f))]
