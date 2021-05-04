@@ -2,7 +2,6 @@ from os.path import isfile, join
 from os import listdir
 from numpy.lib.shape_base import dstack
 from tqdm import tqdm
-from utils import *
 
 import tensorflow_datasets as tfds
 import tensorflow as tf
@@ -23,12 +22,23 @@ class DataWriter():
             src_path) if isfile(join(src_path, f))]
 
     @staticmethod
-    def parse_single_image(image, label):
+    def _bytes_feature(value):
+        """Returns a bytes_list from a string / byte."""
+        if isinstance(value, type(tf.constant(0))):  # if value ist tensor
+            value = value.numpy()  # get value of tensor
+        return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+    @staticmethod
+    def serialize_array(array):
+        array = tf.io.serialize_tensor(array)
+        return array
+
+    def parse_single_image(self, image, label):
         h, w, d = image.shape
         # define the dictionary -- the structure -- of our single example
         data = {
-            'image': _bytes_feature(serialize_array(image)),
-            'label': _bytes_feature(serialize_array(label))
+            'image': self._bytes_feature(self.serialize_array(image)),
+            'label': self._bytes_feature(self.serialize_array(label))
         }
         # create an Example, wrapping the single features
         out = tf.train.Example(features=tf.train.Features(feature=data))
