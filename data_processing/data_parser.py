@@ -7,11 +7,11 @@ import tensorflow_datasets as tfds
 import tensorflow as tf
 import numpy as np
 import cv2
-
+AUTOTUNE = tf.data.experimental.AUTOTUNE
 HEIGHT = 512
 WIDTH = 512
 DEPTH = 3
-
+BATCH_SIZE = 32
 N_CLASSES=9
 
 class DataWriter():
@@ -70,7 +70,7 @@ class DataReader():
     def __init__(self, src_path):
         self.src_path = src_path
     
-        self.filenames = [f for f in listdir(
+        self.filenames = [self.src_path + f for f in listdir(
             src_path) if isfile(join(src_path, f))]
 
     def parse_tfr_element(self, element):
@@ -96,7 +96,7 @@ class DataReader():
 
     def get_dataset_small(self, filenames=None):
         #create the dataset
-        filenames = self.filenames if filenames is not None else filenames
+        filenames = self.filenames if filenames is None else filenames
         dataset = tf.data.TFRecordDataset(filenames)
 
         #pass every single feature through our mapping function
@@ -104,4 +104,27 @@ class DataReader():
             self.parse_tfr_element
         )
             
+        return dataset
+    def load_dataset(self, filenames=None):
+        filenames = self.filenames if filenames is None else filenames
+        ignore_order = tf.data.Options()
+        ignore_order.experimental_deterministic = False  # disable order, increase speed
+        dataset = tf.data.TFRecordDataset(
+            filenames
+        )  # automatically interleaves reads from multiple files
+        dataset = dataset.with_options(
+            ignore_order
+        )  # uses data as soon as it streams in, rather than in its original order
+        dataset = dataset.map(
+            self.parse_tfr_element, num_parallel_calls=AUTOTUNE
+        )
+        # returns a dataset of (image, label) pairs if labeled=True or just images if labeled=False
+        return dataset
+    
+    def get_dataset(self, filenames=None):
+        filenames = self.filenames if filenames is None else filenames
+        dataset = self.load_dataset(filenames)
+        dataset = dataset.shuffle(2048)
+        dataset = dataset.prefetch(buffer_size=AUTOTUNE)
+        dataset = dataset.batch(BATCH_SIZE)
         return dataset
