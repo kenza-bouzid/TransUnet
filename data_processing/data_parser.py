@@ -20,7 +20,7 @@ class DataWriter():
         self.src_path = src_path
         self.dest_path = dest_path
         self.filenames = [f for f in listdir(
-            dest_path) if isfile(join(dest_path, f))]
+            src_path) if isfile(join(src_path, f))]
 
     @staticmethod
     def parse_single_image(image, label):
