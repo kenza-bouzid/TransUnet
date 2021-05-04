@@ -91,7 +91,7 @@ class DataReader():
         label = tf.io.parse_tensor(raw_label, out_type=tf.float32)
         label = tf.reshape(label, shape=[HEIGHT,WIDTH])
         label = tf.cast(label, tf.int32)
-        label = tf.one_hot(label, depth=9)
+        label = tf.one_hot(label, depth=N_CLASSES)
         return (image, label)
 
     def get_dataset_small(self, filenames=None):
