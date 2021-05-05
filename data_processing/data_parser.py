@@ -125,7 +125,7 @@ class DataReader():
     def get_dataset(self, filenames=None):
         filenames = self.filenames if filenames is None else filenames
         dataset = self.load_dataset(filenames)
-        dataset = dataset.shuffle(BUFFER_SIZE)
+        # dataset = dataset.shuffle(BUFFER_SIZE)
         dataset = dataset.prefetch(buffer_size=AUTOTUNE)
         dataset = dataset.batch(BATCH_SIZE)
         return dataset
