@@ -13,6 +13,7 @@ WIDTH = 512
 DEPTH = 3
 BATCH_SIZE = 32
 N_CLASSES=9
+BUFFER_SIZE=64
 
 class DataWriter():
     def __init__(self, src_path, dest_path):
@@ -124,7 +125,7 @@ class DataReader():
     def get_dataset(self, filenames=None):
         filenames = self.filenames if filenames is None else filenames
         dataset = self.load_dataset(filenames)
-        dataset = dataset.shuffle(2048)
+        dataset = dataset.shuffle(BUFFER_SIZE)
         dataset = dataset.prefetch(buffer_size=AUTOTUNE)
         dataset = dataset.batch(BATCH_SIZE)
         return dataset
