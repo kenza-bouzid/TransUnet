@@ -6,25 +6,6 @@ tfk = tf.keras
 tfkl = tfk.layers
 tfm = tf.math
 
-class SegmentationHead(tfkl.Layer):
-    def __init__(self, name="seg_head", filters=9, kernel_size=1, upsampling_factor=16, ** kwargs):
-        super(SegmentationHead, self).__init__(name=name, **kwargs)
-        self.filters = filters
-        self.kernel_size = kernel_size
-        self.upsampling_factor = upsampling_factor
-
-    def build(self, input_shape):
-        self.conv = tfkl.Conv2D(
-            filters=self.filters, kernel_size=self.kernel_size, padding="same")
-        self.upsampling = tfkl.UpSampling2D(
-            size=self.upsampling_factor, interpolation="bilinear")
-
-    def call(self, inputs):
-        conv = self.conv(inputs)
-        up = self.upsampling(conv)
-        return up
-
-
 class AddPositionEmbs(tfkl.Layer):
     """Adds (optionally learned) positional embeddings to the inputs."""
     def __init__(self, trainable=False, **kwargs):

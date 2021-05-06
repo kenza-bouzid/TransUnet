@@ -21,6 +21,7 @@ class DataWriter():
         self.dest_path = dest_path
         self.filenames = [f for f in listdir(
             src_path) if isfile(join(src_path, f))]
+        self.filenames = np.random.shuffle(self.filenames)
 
     @staticmethod
     def _bytes_feature(value):

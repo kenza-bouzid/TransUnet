@@ -193,6 +193,9 @@ def load_weights_numpy(model, params_path):
                     source_weights, match["layer"].get_weights()
                 )
             ]
+        # print(match["keys"])
+        # print()
+        # print("Hey", np.array(source_weights).shape)
         match["layer"].set_weights(source_weights)
 
     

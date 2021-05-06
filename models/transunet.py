@@ -1,9 +1,10 @@
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
-import models.layers as layers
+import models.encoder_layers as encoder_layers
+import models.decoder_layers as decoder_layers
 import models.utils as utils
-
+import math
 tfk = tf.keras
 tfkl = tfk.layers
 tfm = tf.math
@@ -20,6 +21,12 @@ BASE_URL = "https://github.com/faustomorales/vit-keras/releases/download/dl"
 WEIGHTS = {"imagenet21k": 21_843, "imagenet21k+imagenet2012": 1_000}
 WEIGHTS = "imagenet21k+imagenet2012"
 SIZES = {"B_16", "B_32", "L_16", "L_32"}
+
+
+
+
+class DecoderBlock(tfkl.Layer):
+    pass
 
 class TransUnet():
     def __init__(self, config):
@@ -43,6 +50,24 @@ class TransUnet():
         # Tranformer Encoder
         assert self.image_size % self.patch_size == 0, "image_size must be a multiple of patch_size"
         x = tf.keras.layers.Input(shape=(self.image_size, self.image_size, 3))
+        ## Embedding
+        if "hybrid" in self.config:
+            resnet50v2 = tfk.applications.ResNet50V2(
+                include_top=False, input_shape=(self.image_size, self.image_size, 3))
+            resnet50v2.trainable = False
+            _ = resnet50v2(x)
+            # feature_2 = resnet50v2.get_layer("conv1_conv").output
+            # feature_4 = resnet50v2.get_layer("conv2_block3_preact_relu").output
+            # feature_8 = resnet50v2.get_layer("conv3_block4_preact_relu").output
+            feature_2, feature_4, feature_8 = None, None, None
+            y = resnet50v2.get_layer("conv5_block1_preact_relu").output
+            grid_size = self.config.grid
+            self.patch_size = self.image_size // 16 //grid_size[0]
+            # y, feature_2, feature_4, feature_8 = self.resnet_embeddings(x)
+        else:
+            y = x
+            feature_2, feature_4, feature_8 = None, None, None
+
         y = tf.keras.layers.Conv2D(
             filters=self.hidden_size,
             kernel_size=self.patch_size,
@@ -50,31 +75,39 @@ class TransUnet():
             padding="valid",
             name="embedding",
             trainable=False
-        )(x)
+        )(y)
         y = tf.keras.layers.Reshape(
             (y.shape[1] * y.shape[2], self.hidden_size))(y)
-        y = layers.AddPositionEmbs(name="Transformer/posembed_input")(y)
+        y = encoder_layers.AddPositionEmbs(name="Transformer/posembed_input")(y)
+        # Transformer
         for n in range(self.n_layers):
-            y, _ = layers.TransformerBlock(
+            y, _ = encoder_layers.TransformerBlock(
                 n_heads=self.n_heads,
                 mlp_dim=self.mlp_dim,
                 dropout=self.dropout,
                 name=f"Transformer/encoderblock_{n}",
             )(y)
-        y = tf.keras.layers.LayerNormalization(
+        y = tfkl.LayerNormalization(
             epsilon=1e-6, name="Transformer/encoder_norm"
         )(y)
 
-        ## Segmentation Head
-        n_patch_sqrt = (self.image_size//self.patch_size)
+        n_patch_sqrt = int(math.sqrt(y.shape[1]))
+        
+        # n_patch_sqrt = (self.image_size//self.patch_size)
 
-        y = tf.keras.layers.Reshape(
+        y = tfkl.Reshape(
             target_shape=[n_patch_sqrt, n_patch_sqrt, self.hidden_size])(y)
+        
+        ## Decoder 
+        if "decoder_channels" in self.config:
+            y = decoder_layers.DecoderCup(
+                decoder_channels=self.config.decoder_channels, n_skip=self.config.n_skip)(y, feature_2, feature_4, feature_8)
+        ## Segmentation Head
 
-        y = layers.SegmentationHead(
+        y = decoder_layers.SegmentationHead(
             filters=self.filters, kernel_size=self.kernel_size, upsampling_factor=self.upsampling_factor)(y)
 
-        return tfk.models.Model(inputs=x, outputs=y, name=self.name)
+        return tfk.models.Model(inputs=resnet50v2.input if "hybrid" in self.config else x, outputs=y, name=self.name)
 
     def load_pretrained(self):
         """Load model weights for a known configuration."""
@@ -132,6 +165,24 @@ class TransUnet():
         return tf.reduce_mean(dices)
 
 
+    def resnet_embeddings(self, x):
+        resnet50v2 = tfk.applications.ResNet50V2(
+            include_top=False, input_shape=(self.image_size, self.image_size, 3))
+        resnet50v2.trainable = False
+        _ = resnet50v2(x)
+        print(resnet50v2.layers[0].name)
+        layers = ["conv1_conv", "conv2_block3_preact_relu",
+                  "conv3_block4_preact_relu"]
+        feature_2 = resnet50v2.get_layer("conv1_conv").output
+        feature_4 = resnet50v2.get_layer("conv2_block3_preact_relu").output
+        feature_8 = resnet50v2.get_layer("conv3_block4_preact_relu").output
+
+        # features = tf.ragged.constant([])                        
+        # for l in layers[:-1]:
+        #     features = tf.stack(
+        #         [features, resnet50v2.get_layer(l).output])
+        x = resnet50v2.get_layer("conv5_block1_preact_relu").output
+        return x, feature_2, feature_4, feature_8 
 
 
 
