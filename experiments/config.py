@@ -13,6 +13,7 @@ import ml_collections
 # kernel_size: int,
 # upsampling_factor: int
 
+
 def get_b16_none():
     """Returns the ViT-B/16 configuration."""
     config = ml_collections.ConfigDict()
@@ -22,13 +23,14 @@ def get_b16_none():
     config.n_layers = 12
     config.hidden_size = 768
     config.n_heads = 12
-    config.name = "b16_none" 
-    config.mlp_dim = 3072 
+    config.name = "b16_none"
+    config.mlp_dim = 3072
     config.dropout = 0.1
-    config.filters = 9 
+    config.filters = 9
     config.kernel_size = 1
     config.upsampling_factor = 16
-    return config    
+    config.hybrid = False
+    return config
 
 
 def get_b16_cup():
@@ -47,7 +49,8 @@ def get_b16_cup():
     config.kernel_size = 1
     config.upsampling_factor = 1
     config.decoder_channels = [256, 128, 64, 16]
-    config.n_skip=0
+    config.n_skip = 0
+    config.hybrid = False
     return config
 
 
@@ -55,7 +58,7 @@ def get_b16_hybrid():
     """Returns the ViT-B/16 configuration."""
     config = ml_collections.ConfigDict()
     config.vit = "B_16"
-    config.image_size = 224 
+    config.image_size = 224
     config.patch_size = 16
     config.n_layers = 12
     config.hidden_size = 768
@@ -79,6 +82,7 @@ def get_b32_config():
     config.patches.size = (32, 32)
     config.pretrained_path = '../model/vit_checkpoint/imagenet21k/ViT-B_32.npz'
     return config
+
 
 CONFIG_B = {
     "dropout": 0.1,

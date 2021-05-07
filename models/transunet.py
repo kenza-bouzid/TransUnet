@@ -43,6 +43,7 @@ class TransUnet():
         self.kernel_size = config.kernel_size
         self.upsampling_factor = config.upsampling_factor
         self.vit = config.vit
+        self.hybrid = config.hybrid
         self.model = self.build_model()
 
 
@@ -51,7 +52,7 @@ class TransUnet():
         assert self.image_size % self.patch_size == 0, "image_size must be a multiple of patch_size"
         x = tf.keras.layers.Input(shape=(self.image_size, self.image_size, 3))
         ## Embedding
-        if "hybrid" in self.config:
+        if self.hybrid:
             grid_size = self.config.grid
             self.patch_size = self.image_size // 16 // grid_size[0]
             if self.patch_size == 0:
@@ -59,10 +60,11 @@ class TransUnet():
 
             resnet50v2, features = self.resnet_embeddings(x)
             y = resnet50v2.get_layer("conv4_block6_preact_relu").output
-            self.hybrid = True
+            x = resnet50v2.input
         else:
             y = x
             features = None
+
 
         y = tf.keras.layers.Conv2D(
             filters=self.hidden_size,
@@ -101,7 +103,7 @@ class TransUnet():
         y = decoder_layers.SegmentationHead(
             filters=self.filters, kernel_size=self.kernel_size, upsampling_factor=self.upsampling_factor)(y)
 
-        return tfk.models.Model(inputs=resnet50v2.input if "hybrid" in self.config else x, outputs=y, name=self.name)
+        return tfk.models.Model(inputs=x, outputs=y, name=self.name)
 
     def load_pretrained(self):
         """Load model weights for a known configuration."""
