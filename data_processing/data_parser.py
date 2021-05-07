@@ -168,8 +168,8 @@ class DataReader():
 
     def get_dataset_tpu_training(self, tpu_strategy):
 
-        batch_size = 16 * tpu_strategy.num_replicas_in_sync
-
+        # batch_size = 16 * tpu_strategy.num_replicas_in_sync
+        batch_size=BATCH_SIZE
         gcs_pattern = 'gs://aga_bucket/synapse-tfrecords-batch25/*.tfrecords'
         validation_split = 0.1
         filenames = tf.io.gfile.glob(gcs_pattern)
