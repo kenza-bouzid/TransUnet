@@ -16,7 +16,7 @@ N_CLASSES=9
 BUFFER_SIZE=64
 
 class DataWriter():
-    def __init__(self, src_path, dest_path, batch_size=50):
+    def __init__(self, src_path, dest_path, batch_size=25):
         self.src_path = src_path
         self.dest_path = dest_path
         self.filenames = [f for f in listdir(
@@ -75,7 +75,8 @@ class DataWriter():
             for file in self.filenames[start: end]:
                 data = np.load(self.src_path + file)
                 image, label = data['image'], data['label']
-                out = self.parse_single_image(image=image, label=label)
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                out = self.parse_single_image(image=image_rgb, label=label)
                 writer.write(out.SerializeToString())
             writer.close()
             print(f"Wrote batch {i} to TFRecord")
