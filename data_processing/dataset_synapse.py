@@ -14,11 +14,12 @@ def load_data(data_dir, n_files, output_size=512):
                 break
             data = np.load(data_dir + file)
             image = cv2.cvtColor(data['image'], cv2.COLOR_GRAY2RGB)
+            label = data['label']
             w, h, c = image.shape
             if w != output_size or h != output_size:
                 image = zoom(
                     image, (output_size / w, output_size / h, 1), order=3)
-                label = zoom(data['label'], (output_size /
+                label = zoom(label, (output_size /
                                              w, output_size / h), order=0)
             image_3d.append(image)
             label_3d.append(tf.one_hot(label, depth=9))
