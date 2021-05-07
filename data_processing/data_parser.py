@@ -163,7 +163,7 @@ class DataReader():
         # return augmented.repeat().shuffle(2048).batch(batch_size).prefetch(AUTO)
 
         # Prefetch the next batch while training (autotune prefetch buffer size).
-        return dataset.shuffle(BUFFER_SIZE).batch(batch_size).prefetch(AUTOTUNE)
+        return dataset.shuffle(BUFFER_SIZE).batch(batch_size, drop_remainder=True).prefetch(AUTOTUNE)
 
 
     def get_dataset_tpu_training(self, tpu_strategy):
@@ -179,6 +179,6 @@ class DataReader():
 
         training_dataset = self.get_training_dataset(train_fns, batch_size)
         validation_dataset = self.load_dataset(
-            validation_fns).batch(batch_size).prefetch(AUTOTUNE)
+            validation_fns).batch(batch_size, drop_remainder=True).prefetch(AUTOTUNE)
 
         return training_dataset, validation_dataset
