@@ -63,7 +63,7 @@ class DataWriter():
         for file in tqdm(self.filenames):
             data = np.load(self.src_path + file)
             image, label = data['image'], data['label']
-            filename = self.dest_path + file[:-3] + "tfrecords"
+            filename = self.dest_path + file[:-3]
             self.write_image_to_tfr(image, label, filename)
 
     def write_batch_tfrecords(self):
