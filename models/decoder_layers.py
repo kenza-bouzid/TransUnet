@@ -78,18 +78,14 @@ class DecoderCup(tfkl.Layer):
         self.conv_more = Conv2DReLu(filters=512, kernel_size=3)
         self.blocks = [DecoderBlock(filters=out_ch) for out_ch in self.decoder_channels]
 
-    def call(self, hidden_states, feature_2, feature_4, feature_8):
+    def call(self, hidden_states, features):
         x = self.conv_more(hidden_states)
-        x = self.blocks[0](x, skip=feature_8)
-        x = self.blocks[1](x, skip=feature_4)
-        x = self.blocks[2](x, skip=feature_2)
-        x = self.blocks[3](x)
-        # for i, decoder_block in enumerate(self.blocks):
-        #     if features is not None:
-        #         skip = features[i] if (i < self.n_skip) else None
-        #     else:
-        #         skip = None
-        #     x = decoder_block(x, skip=skip)
+        for i, decoder_block in enumerate(self.blocks):
+            if features is not None:
+                skip = features[i] if (i < self.n_skip) else None
+            else:
+                skip = None
+            x = decoder_block(x, skip=skip)
         return x 
     
 

@@ -57,12 +57,12 @@ class TransUnet():
             if self.patch_size == 0:
                 self.patch_size = 1 
 
-            resnet50v2, feature_2, feature_4, feature_8 = self.resnet_embeddings(x)
+            resnet50v2, features = self.resnet_embeddings(x)
             y = resnet50v2.get_layer("conv4_block6_preact_relu").output
             self.hybrid = True
         else:
             y = x
-            feature_2, feature_4, feature_8 = None, None, None
+            features = None
 
         y = tf.keras.layers.Conv2D(
             filters=self.hidden_size,
@@ -95,7 +95,7 @@ class TransUnet():
         ## Decoder 
         if "decoder_channels" in self.config:
             y = decoder_layers.DecoderCup(
-                decoder_channels=self.config.decoder_channels, n_skip=self.config.n_skip)(y, feature_2, feature_4, feature_8)
+                decoder_channels=self.config.decoder_channels, n_skip=self.config.n_skip)(y, features)
         
         ## Segmentation Head
         y = decoder_layers.SegmentationHead(
@@ -106,7 +106,7 @@ class TransUnet():
     def load_pretrained(self):
         """Load model weights for a known configuration."""
         if self.hybrid:
-            local_filepath = '/Users/agnieszkamiszkurka/Documents/KTH/S2/DeepLearning/TransUnet/models/vit_checkpoint/R50+ViT-B_16.npz'
+            local_filepath = 'path_to_resnet_weights'
         else:
             fname = f"ViT-{self.vit}_{WEIGHTS}.npz"
             origin = f"{BASE_URL}/{fname}"
@@ -169,16 +169,13 @@ class TransUnet():
         resnet50v2.trainable = False
         _ = resnet50v2(x)
         layers = ["conv1_conv", "conv2_block3_preact_relu",
-                  "conv4_block6_preact_relu"]
-        feature_2 = resnet50v2.get_layer("conv1_conv").output
-        feature_4 = resnet50v2.get_layer("conv2_block3_preact_relu").output
-        feature_8 = resnet50v2.get_layer("conv3_block4_preact_relu").output
+                  "conv3_block4_preact_relu"]
 
-        # features = []                        
-        # for l in layers[:-1]:
-        #     features.append(resnet50v2.get_layer(l).output)
-        # x = resnet50v2.get_layer("conv4_block6_preact_relu").output
-        return resnet50v2, feature_2, feature_4, feature_8 
+        features = []                        
+        for l in layers:
+            features.append(resnet50v2.get_layer(l).output)
+        x = resnet50v2.get_layer("conv4_block6_preact_relu").output
+        return resnet50v2, features
 
 
 
