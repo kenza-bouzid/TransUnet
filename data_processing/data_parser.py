@@ -16,12 +16,14 @@ N_CLASSES=9
 BUFFER_SIZE=64
 
 class DataWriter():
-    def __init__(self, src_path, dest_path):
+    def __init__(self, src_path, dest_path, batch_size=50):
         self.src_path = src_path
         self.dest_path = dest_path
         self.filenames = [f for f in listdir(
             src_path) if isfile(join(src_path, f))]
         self.filenames = np.random.shuffle(self.filenames)
+        self.batch_size = batch_size
+        self.n_samples = len(self.filenames)
 
     @staticmethod
     def _bytes_feature(value):
@@ -36,7 +38,6 @@ class DataWriter():
         return array
 
     def parse_single_image(self, image, label):
-        h, w, d = image.shape
         # define the dictionary -- the structure -- of our single example
         data = {
             'image': self._bytes_feature(self.serialize_array(image)),
@@ -44,11 +45,9 @@ class DataWriter():
         }
         # create an Example, wrapping the single features
         out = tf.train.Example(features=tf.train.Features(feature=data))
-
         return out
 
     def write_image_to_tfr(self, image, label, filename):
-    
         filename = filename+".tfrecords"
         # create a writer that'll store our data to disk
         writer = tf.io.TFRecordWriter(filename)
@@ -66,6 +65,21 @@ class DataWriter():
             image, label = data['image'], data['label']
             filename = self.dest_path + file[:-3] + "tfrecords"
             self.write_image_to_tfr(image, label, filename)
+
+    def write_batch_tfrecords(self):
+        n_batches = self.n_samples // self.batch_size
+        for i in tqdm(range(n_batches+1)):
+            filename = f'record_{i}.tfrecords'
+            writer = tf.io.TFRecordWriter(filename)
+            start, end = self.batch_size*i, self.batch_size*(i+1) if self.batch_size*(i+1) < self.n_samples else self.n_samples
+            for file in self.filenames[start: end]:
+                data = np.load(self.src_path + file)
+                image, label = data['image'], data['label']
+                out = self.parse_single_image(image=image, label=label)
+                writer.write(out.SerializeToString())
+            writer.close()
+            print(f"Wrote batch {i} to TFRecord")
+
 
 class DataReader():
 
