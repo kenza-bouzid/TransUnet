@@ -21,7 +21,7 @@ class DataWriter():
         self.dest_path = dest_path
         self.filenames = [f for f in listdir(
             src_path) if isfile(join(src_path, f))]
-        self.filenames = np.random.shuffle(self.filenames)
+        np.random.shuffle(self.filenames)
         self.batch_size = batch_size
         self.n_samples = len(self.filenames)
 
@@ -69,7 +69,7 @@ class DataWriter():
     def write_batch_tfrecords(self):
         n_batches = self.n_samples // self.batch_size
         for i in tqdm(range(n_batches+1)):
-            filename = f'record_{i}.tfrecords'
+            filename = self.dest_path + f'record_{i}.tfrecords'
             writer = tf.io.TFRecordWriter(filename)
             start, end = self.batch_size*i, self.batch_size*(i+1) if self.batch_size*(i+1) < self.n_samples else self.n_samples
             for file in self.filenames[start: end]:
