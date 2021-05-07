@@ -55,7 +55,7 @@ def get_b16_hybrid():
     """Returns the ViT-B/16 configuration."""
     config = ml_collections.ConfigDict()
     config.vit = "B_16"
-    config.image_size = 512
+    config.image_size = 224 
     config.patch_size = 16
     config.n_layers = 12
     config.hidden_size = 768

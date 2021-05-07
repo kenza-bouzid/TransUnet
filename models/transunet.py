@@ -52,18 +52,14 @@ class TransUnet():
         x = tf.keras.layers.Input(shape=(self.image_size, self.image_size, 3))
         ## Embedding
         if "hybrid" in self.config:
-            resnet50v2 = tfk.applications.ResNet50V2(
-                include_top=False, input_shape=(self.image_size, self.image_size, 3))
-            resnet50v2.trainable = False
-            _ = resnet50v2(x)
-            # feature_2 = resnet50v2.get_layer("conv1_conv").output
-            # feature_4 = resnet50v2.get_layer("conv2_block3_preact_relu").output
-            # feature_8 = resnet50v2.get_layer("conv3_block4_preact_relu").output
-            feature_2, feature_4, feature_8 = None, None, None
-            y = resnet50v2.get_layer("conv5_block1_preact_relu").output
             grid_size = self.config.grid
-            self.patch_size = self.image_size // 16 //grid_size[0]
-            # y, feature_2, feature_4, feature_8 = self.resnet_embeddings(x)
+            self.patch_size = self.image_size // 16 // grid_size[0]
+            if self.patch_size == 0:
+                self.patch_size = 1 
+
+            resnet50v2, feature_2, feature_4, feature_8 = self.resnet_embeddings(x)
+            y = resnet50v2.get_layer("conv4_block6_preact_relu").output
+            self.hybrid = True
         else:
             y = x
             feature_2, feature_4, feature_8 = None, None, None
@@ -93,8 +89,6 @@ class TransUnet():
 
         n_patch_sqrt = int(math.sqrt(y.shape[1]))
         
-        # n_patch_sqrt = (self.image_size//self.patch_size)
-
         y = tfkl.Reshape(
             target_shape=[n_patch_sqrt, n_patch_sqrt, self.hidden_size])(y)
         
@@ -102,8 +96,8 @@ class TransUnet():
         if "decoder_channels" in self.config:
             y = decoder_layers.DecoderCup(
                 decoder_channels=self.config.decoder_channels, n_skip=self.config.n_skip)(y, feature_2, feature_4, feature_8)
+        
         ## Segmentation Head
-
         y = decoder_layers.SegmentationHead(
             filters=self.filters, kernel_size=self.kernel_size, upsampling_factor=self.upsampling_factor)(y)
 
@@ -111,10 +105,14 @@ class TransUnet():
 
     def load_pretrained(self):
         """Load model weights for a known configuration."""
-        fname = f"ViT-{self.vit}_{WEIGHTS}.npz"
-        origin = f"{BASE_URL}/{fname}"
-        local_filepath = tf.keras.utils.get_file(
-            fname, origin, cache_subdir="weights")
+        if self.hybrid:
+            local_filepath = '/Users/agnieszkamiszkurka/Documents/KTH/S2/DeepLearning/TransUnet/models/vit_checkpoint/R50+ViT-B_16.npz'
+        else:
+            fname = f"ViT-{self.vit}_{WEIGHTS}.npz"
+            origin = f"{BASE_URL}/{fname}"
+            local_filepath = tf.keras.utils.get_file(
+                fname, origin, cache_subdir="weights")
+            
         utils.load_weights_numpy(self.model, local_filepath)
 
     def compile(self):
@@ -170,19 +168,17 @@ class TransUnet():
             include_top=False, input_shape=(self.image_size, self.image_size, 3))
         resnet50v2.trainable = False
         _ = resnet50v2(x)
-        print(resnet50v2.layers[0].name)
         layers = ["conv1_conv", "conv2_block3_preact_relu",
-                  "conv3_block4_preact_relu"]
+                  "conv4_block6_preact_relu"]
         feature_2 = resnet50v2.get_layer("conv1_conv").output
         feature_4 = resnet50v2.get_layer("conv2_block3_preact_relu").output
         feature_8 = resnet50v2.get_layer("conv3_block4_preact_relu").output
 
-        # features = tf.ragged.constant([])                        
+        # features = []                        
         # for l in layers[:-1]:
-        #     features = tf.stack(
-        #         [features, resnet50v2.get_layer(l).output])
-        x = resnet50v2.get_layer("conv5_block1_preact_relu").output
-        return x, feature_2, feature_4, feature_8 
+        #     features.append(resnet50v2.get_layer(l).output)
+        # x = resnet50v2.get_layer("conv4_block6_preact_relu").output
+        return resnet50v2, feature_2, feature_4, feature_8 
 
 
 

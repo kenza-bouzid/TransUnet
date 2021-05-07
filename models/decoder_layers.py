@@ -83,6 +83,7 @@ class DecoderCup(tfkl.Layer):
         x = self.blocks[0](x, skip=feature_8)
         x = self.blocks[1](x, skip=feature_4)
         x = self.blocks[2](x, skip=feature_2)
+        x = self.blocks[3](x)
         # for i, decoder_block in enumerate(self.blocks):
         #     if features is not None:
         #         skip = features[i] if (i < self.n_skip) else None
