@@ -160,9 +160,10 @@ class DataReader():
         #     modified = tf.image.random_saturation(modified, 0, 2)
         #     return modified, one_hot_class
         # augmented = dataset.map(data_augment, num_parallel_calls=AUTO)
+        # return augmented.repeat().shuffle(2048).batch(batch_size).prefetch(AUTO)
 
         # Prefetch the next batch while training (autotune prefetch buffer size).
-        return dataset.repeat().shuffle(2048).batch(batch_size).prefetch(AUTOTUNE)
+        return dataset.shuffle(BUFFER_SIZE).batch(batch_size).prefetch(AUTOTUNE)
 
 
     def get_dataset_tpu_training(self, tpu_strategy):
