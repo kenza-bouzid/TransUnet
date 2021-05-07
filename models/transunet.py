@@ -170,8 +170,9 @@ class TransUnet():
             include_top=False, input_shape=(self.image_size, self.image_size, 3))
         resnet50v2.trainable = False
         _ = resnet50v2(x)
-        layers = ["conv1_conv", "conv2_block3_preact_relu",
-                  "conv3_block4_preact_relu"]
+        layers = ["conv3_block4_preact_relu", 
+                "conv2_block3_preact_relu",
+                "conv1_conv"]
 
         features = []                        
         for l in layers:
