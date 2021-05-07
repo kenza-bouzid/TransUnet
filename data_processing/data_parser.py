@@ -127,11 +127,8 @@ class DataReader():
         ignore_order = tf.data.Options()
         ignore_order.experimental_deterministic = False  # disable order, increase speed
         dataset = tf.data.TFRecordDataset(
-            filenames
-        )  # automatically interleaves reads from multiple files
-        dataset = dataset.with_options(
-            ignore_order
-        )  # uses data as soon as it streams in, rather than in its original order
+            filenames, num_parallel_reads=AUTOTUNE)  # automatically interleaves reads from multiple files
+        dataset = dataset.with_options(ignore_order)  # uses data as soon as it streams in, rather than in its original order
         dataset = dataset.map(
             self.parse_tfr_element, num_parallel_calls=AUTOTUNE
         )
@@ -145,3 +142,42 @@ class DataReader():
         dataset = dataset.prefetch(buffer_size=AUTOTUNE)
         dataset = dataset.batch(BATCH_SIZE)
         return dataset
+
+
+    def load_dataset(self, filenames):
+      # Read from TFRecords. For optimal performance, we interleave reads from multiple files.
+        records = tf.data.TFRecordDataset(
+            filenames, num_parallel_reads=AUTOTUNE)
+        return records.map(self.parse_tfr_element, num_parallel_calls=AUTOTUNE)
+
+    def get_training_dataset(self, train_fns, batch_size):
+        dataset = self.load_dataset(train_fns)
+
+        # Create some additional training images by randomly flipping and
+        # increasing/decreasing the saturation of images in the training set. 
+        # def data_augment(image, one_hot_class):
+        #     modified = tf.image.random_flip_left_right(image)
+        #     modified = tf.image.random_saturation(modified, 0, 2)
+        #     return modified, one_hot_class
+        # augmented = dataset.map(data_augment, num_parallel_calls=AUTO)
+
+        # Prefetch the next batch while training (autotune prefetch buffer size).
+        return dataset.repeat().shuffle(2048).batch(batch_size).prefetch(AUTOTUNE)
+
+
+    def get_dataset_tpu_training(self, tpu_strategy):
+
+        batch_size = 16 * tpu_strategy.num_replicas_in_sync
+
+        gcs_pattern = 'gs://aga_bucket/synapse-tfrecords-batch25/*.tfrecords'
+        validation_split = 0.1
+        filenames = tf.io.gfile.glob(gcs_pattern)
+        split = len(filenames) - int(len(filenames) * validation_split)
+        train_fns = filenames[:split]
+        validation_fns = filenames[split:]
+
+        training_dataset = self.get_training_dataset(train_fns, batch_size)
+        validation_dataset = self.load_dataset(
+            validation_fns).batch(batch_size).prefetch(AUTOTUNE)
+
+        return training_dataset, validation_dataset
