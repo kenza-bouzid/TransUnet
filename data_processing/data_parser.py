@@ -48,7 +48,7 @@ class DataWriter():
         return out
 
     def write_image_to_tfr(self, image, label, filename):
-        filename = filename+".tfrecords"
+        filename = filename+"tfrecords"
         # create a writer that'll store our data to disk
         writer = tf.io.TFRecordWriter(filename)
 
