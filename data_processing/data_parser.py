@@ -84,7 +84,7 @@ class DataWriter():
 
 class DataReader():
 
-    def __init__(self, src_path):
+    def __init__(self, src_path=""):
         self.src_path = src_path
     
         self.filenames = [self.src_path + f for f in listdir(
