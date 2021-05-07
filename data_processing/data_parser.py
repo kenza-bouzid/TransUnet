@@ -1,6 +1,6 @@
+from scipy.ndimage.interpolation import zoom
 from os.path import isfile, join
 from os import listdir
-from numpy.lib.shape_base import dstack
 from tqdm import tqdm
 
 import tensorflow_datasets as tfds
@@ -8,15 +8,13 @@ import tensorflow as tf
 import numpy as np
 import cv2
 AUTOTUNE = tf.data.experimental.AUTOTUNE
-HEIGHT = 512
-WIDTH = 512
-DEPTH = 3
+
 BATCH_SIZE = 24
 N_CLASSES= 9
 BUFFER_SIZE = 50
 
 class DataWriter():
-    def __init__(self, src_path, dest_path, batch_size=25):
+    def __init__(self, src_path, dest_path, batch_size=25, height=512, width=512):
         self.src_path = src_path
         self.dest_path = dest_path
         self.filenames = [f for f in listdir(
@@ -24,6 +22,8 @@ class DataWriter():
         np.random.shuffle(self.filenames)
         self.batch_size = batch_size
         self.n_samples = len(self.filenames)
+        self.height = height
+        self.width = width
 
     @staticmethod
     def _bytes_feature(value):
@@ -66,6 +66,16 @@ class DataWriter():
             filename = self.dest_path + file[:-3]
             self.write_image_to_tfr(image, label, filename)
 
+    def process_data(self, data):
+        image = cv2.cvtColor(data['image'], cv2.COLOR_GRAY2RGB)
+        w, h, c = image.shape
+        if w != self.width or h != self.height:
+            image = zoom(
+                image, (self.width / w, self.height / h, 1), order=3)
+            label = zoom(data['label'], (self.width /
+                                         w, self.height / h), order=0)
+        return image, label
+
     def write_batch_tfrecords(self):
         n_batches = self.n_samples // self.batch_size
         for i in tqdm(range(n_batches+1)):
@@ -74,9 +84,8 @@ class DataWriter():
             start, end = self.batch_size*i, self.batch_size*(i+1) if self.batch_size*(i+1) < self.n_samples else self.n_samples
             for file in self.filenames[start: end]:
                 data = np.load(self.src_path + file)
-                image, label = data['image'], data['label']
-                image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-                out = self.parse_single_image(image=image_rgb, label=label)
+                image, label = self.process_data(data)
+                out = self.parse_single_image(image=image, label=label)
                 writer.write(out.SerializeToString())
             writer.close()
             print(f"Wrote batch {i} to TFRecord")
@@ -84,11 +93,15 @@ class DataWriter():
 
 class DataReader():
 
-    def __init__(self, src_path=""):
+    def __init__(self, src_path="", height=512, width=512, depth=3):
         self.src_path = src_path
-    
+
         self.filenames = [self.src_path + f for f in listdir(
             src_path) if isfile(join(src_path, f))]
+        
+        self.height = height
+        self.width = width
+        self.depth = depth
 
     def parse_tfr_element(self, element):
         data = {
@@ -103,10 +116,10 @@ class DataReader():
         
         
         image = tf.io.parse_tensor(raw_image, out_type=tf.float32)
-        image = tf.reshape(image, shape=[HEIGHT,WIDTH,DEPTH])
+        image = tf.reshape(image, shape=[self.height,self.width,self.depth])
 
         label = tf.io.parse_tensor(raw_label, out_type=tf.float32)
-        label = tf.reshape(label, shape=[HEIGHT,WIDTH])
+        label = tf.reshape(label, shape=[self.height,self.width])
         label = tf.cast(label, tf.int32)
         label = tf.one_hot(label, depth=N_CLASSES)
         return (image, label)
@@ -122,6 +135,7 @@ class DataReader():
         )
             
         return dataset
+
     def load_dataset(self, filenames=None):
         filenames = self.filenames if filenames is None else filenames
         ignore_order = tf.data.Options()
@@ -168,8 +182,8 @@ class DataReader():
 
     def get_dataset_tpu_training(self, tpu_strategy):
 
-        # batch_size = 16 * tpu_strategy.num_replicas_in_sync
-        batch_size=BATCH_SIZE
+        batch_size = 16 * tpu_strategy.num_replicas_in_sync
+        # batch_size=BATCH_SIZE
         gcs_pattern = 'gs://aga_bucket/synapse-tfrecords-batch25/*.tfrecords'
         validation_split = 0.1
         filenames = tf.io.gfile.glob(gcs_pattern)
