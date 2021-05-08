@@ -3,6 +3,7 @@ from os.path import isfile, join
 from os import listdir
 from tqdm import tqdm
 
+import tensorflow_addons as tfa
 import tensorflow as tf
 import numpy as np
 import cv2
@@ -117,8 +118,6 @@ class DataReader():
 
         label = tf.io.parse_tensor(raw_label, out_type=tf.float32)
         label = tf.reshape(label, shape=[self.height, self.width])
-        # label = tf.cast(label, tf.int32)
-        # label = tf.one_hot(label, depth=N_CLASSES)
         return (image, label)
 
     def get_dataset_small(self, filenames=None):
@@ -142,6 +141,7 @@ class DataReader():
         dataset = dataset.map(
             self.parse_tfr_element, num_parallel_calls=AUTOTUNE
         )
+        
         # returns a dataset of (image, label) pairs if labeled=True or just images if labeled=False
         return dataset
 
@@ -164,15 +164,42 @@ class DataReader():
 
         # Create some additional training images by randomly flipping and
         # increasing/decreasing the saturation of images in the training set.
-        # def data_augment(image, one_hot_class):
-        #     modified = tf.image.random_flip_left_right(image)
-        #     modified = tf.image.random_saturation(modified, 0, 2)
-        #     return modified, one_hot_class
-        # augmented = dataset.map(data_augment, num_parallel_calls=AUTOTUNE)
-        # return augmented.repeat().shuffle(BUFFER_SIZE).batch(batch_size).prefetch(AUTOTUNE)
+        def data_augment(image, label):
+            rand1, rand2 = tf.random.uniform(shape=(2,)).numpy()
+            if rand1 > 0.5:
+                modified, m_label = self.random_rot_flip(image,label)
+            elif rand2 > 0.5:
+                modified, m_label = self.random_rotate(image,label)
+
+            m_label = tf.cast(m_label, tf.int32)
+            m_label = tf.one_hot(m_label, depth=N_CLASSES)
+            return modified, m_label
+        augmented = dataset.map(data_augment, num_parallel_calls=AUTOTUNE)
+        return augmented.repeat().shuffle(BUFFER_SIZE).batch(batch_size).prefetch(AUTOTUNE)
 
         # Prefetch the next batch while training (autotune prefetch buffer size).
         return dataset.shuffle(BUFFER_SIZE).batch(batch_size, drop_remainder=True).prefetch(AUTOTUNE)
+
+    def random_rotate(self,image,label):
+        seed = tf.random.uniform(shape=(), minval=1, maxval=100, dtype=tf.int32).numpy()
+        rot = tf.random.uniform(shape=(), minval=-np.pi/4, maxval=np.pi/4, dtype=tf.float32).numpy()
+        modified = tfa.image.rotate(image,rot)
+        m_label = tfa.image.rotate(label,rot)
+        return modified, m_label
+
+    def random_rot_flip(self,image,label):
+        seed = tf.random.uniform(shape=(), minval=1, maxval=100, dtype=tf.int32).numpy()
+        k_90 = tf.random.uniform(shape=(), minval=0, maxval=4, dtype=tf.int32).numpy()
+        # vertical flip
+        modified = tf.image.random_flip_left_right(image=image,seed=seed)
+        m_label = tf.image.random_flip_left_right(image=label,seed=seed)
+        # horizontal flip
+        modified = tf.image.random_flip_up_down(image=modified, seed=seed)
+        m_label = tf.image.random_flip_up_down(image=m_label, seed=seed)
+        #rot 90
+        modified = tf.image.rot90(image=modified, k=k_90)
+        m_label = tf.image.rot90(image=m_label, k=k_90)
+        return modified, m_label
 
     def get_dataset_tpu_training(self, tpu_strategy):
 
