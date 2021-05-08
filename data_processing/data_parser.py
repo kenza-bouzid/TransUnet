@@ -11,6 +11,10 @@ AUTOTUNE = tf.data.experimental.AUTOTUNE
 BATCH_SIZE = 24
 N_CLASSES = 9
 BUFFER_SIZE = 50
+DATA_GC_URI = {
+    512: 'gs://aga_bucket/synapse-tfrecords-batch25/*.tfrecords',
+    224: 'gs://aga_bucket/synapse-224-25/*.tfrecords',
+}
 
 
 class DataWriter():
@@ -204,11 +208,11 @@ class DataReader():
         m_label = tf.reshape(m_label,(self.width,self.height))
         return modified, m_label
 
-    def get_dataset_tpu_training(self, tpu_strategy):
+    def get_dataset_tpu_training(self, tpu_strategy, image_size=224):
 
         batch_size = 16 * tpu_strategy.num_replicas_in_sync
         # batch_size=BATCH_SIZE
-        gcs_pattern = 'gs://aga_bucket/synapse-tfrecords-batch25/*.tfrecords'
+        gcs_pattern = DATA_GC_URI[image_size]
         validation_split = 0.1
         filenames = tf.io.gfile.glob(gcs_pattern)
         split = len(filenames) - int(len(filenames) * validation_split)
@@ -220,3 +224,6 @@ class DataReader():
             validation_fns).batch(batch_size, drop_remainder=True).prefetch(AUTOTUNE)
 
         return training_dataset, validation_dataset
+
+
+

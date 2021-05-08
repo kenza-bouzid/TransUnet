@@ -10,23 +10,7 @@ tfkl = tfk.layers
 tfm = tf.math
 tfkc = tfk.callbacks
 
-
-def preprocess_inputs(X):
-    """Preprocess images"""
-    return tf.keras.applications.imagenet_utils.preprocess_input(
-        X, data_format=None, mode="tf"
-    )
-
-BASE_URL = "https://github.com/faustomorales/vit-keras/releases/download/dl"
-WEIGHTS = {"imagenet21k": 21_843, "imagenet21k+imagenet2012": 1_000}
-WEIGHTS = "imagenet21k+imagenet2012"
-SIZES = {"B_16", "B_32", "L_16", "L_32"}
-
-
-
-
-class DecoderBlock(tfkl.Layer):
-    pass
+MODELS_URL = 'https://storage.googleapis.com/vit_models/imagenet21k/'
 
 class TransUnet():
     def __init__(self, config):
@@ -42,7 +26,6 @@ class TransUnet():
         self.filters = config.filters
         self.kernel_size = config.kernel_size
         self.upsampling_factor = config.upsampling_factor
-        self.vit = config.vit
         self.hybrid = config.hybrid
         self.model = self.build_model()
 
@@ -108,12 +91,8 @@ class TransUnet():
 
     def load_pretrained(self):
         """Load model weights for a known configuration."""
-        if self.hybrid:
-            origin = 'https://storage.googleapis.com/aga_bucket/R50%2BViT-B_16.npz'
-            fname = "R50+ViT-B_16.npz"
-        else:
-            fname = f"ViT-{self.vit}_{WEIGHTS}.npz"
-            origin = f"{BASE_URL}/{fname}"
+        origin = MODELS_URL + self.config.pretrained_filename
+        fname = self.config.pretrained_filename
         local_filepath = tf.keras.utils.get_file(
             fname, origin, cache_subdir="weights")
             
@@ -182,5 +161,15 @@ class TransUnet():
         x = resnet50v2.get_layer("conv4_block6_preact_relu").output
         return resnet50v2, features
 
-
-
+    def save_model(self, tpu_strategy, saved_model_path):
+        save_options = tf.saved_model.SaveOptions(
+            experimental_io_device='/job:localhost')
+        self.model.save(saved_model_path, options=save_options)
+    
+    def load_model(self, tpu_strategy, saved_model_path):
+        with tpu_strategy.scope():
+            load_options = tf.saved_model.LoadOptions(experimental_io_device='/job:localhost')
+            # model = tf.keras.models.load_model(saved_model_path, options=load_options, custom_objects={'loss': vit.TransUnet.segmentation_loss})
+            model = tf.keras.models.load_model(saved_model_path, options=load_options, compile=False)
+            self.model = model
+            return model
