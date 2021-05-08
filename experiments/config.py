@@ -18,7 +18,7 @@ def get_b16_none():
     """Returns the ViT-B/16 configuration."""
     config = ml_collections.ConfigDict()
     config.pretrained_filename = "ViT-B_16.npz"
-    config.image_size = 512
+    config.image_size = 224
     config.patch_size = 16
     config.n_layers = 12
     config.hidden_size = 768
@@ -50,7 +50,15 @@ def get_r50_b16():
     config.name = "R50-ViT-B_16"
     config.pretrained_filename = "R50+ViT-B_16.npz"
     config.decoder_channels = [256, 128, 64, 16]
-    config.n_skip = 3
+    config.n_skip = 0
     config.hybrid = True
     config.grid = (16, 16)
+    return config
+
+
+def get_transunet():
+    """Returns the Resnet50 + ViT-B/16 configuration."""
+    config = get_r50_b16()
+    config.name = "transunet"
+    config.n_skip = 3
     return config
