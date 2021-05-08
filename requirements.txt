@@ -1,4 +1,5 @@
 ml-collections
 tensorflow-addons
+medpy
 # opencv-python
 # tensorflow or tensorflow-gpu

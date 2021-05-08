@@ -1,15 +1,16 @@
-import numpy as np
-import tensorflow as tf
-import tensorflow_addons as tfa
+from data_processing.data_parser import N_CLASSES
 import models.encoder_layers as encoder_layers
 import models.decoder_layers as decoder_layers
+import tensorflow_addons as tfa
 import models.utils as utils
+from medpy import metric
+import tensorflow as tf
 import math
 tfk = tf.keras
 tfkl = tfk.layers
 tfm = tf.math
 tfkc = tfk.callbacks
-
+N_CLASSES = 9
 MODELS_URL = 'https://storage.googleapis.com/vit_models/imagenet21k/'
 
 class TransUnet():
@@ -161,7 +162,7 @@ class TransUnet():
         x = resnet50v2.get_layer("conv4_block6_preact_relu").output
         return resnet50v2, features
 
-    def save_model(self, tpu_strategy, saved_model_path):
+    def save_model(self, saved_model_path):
         save_options = tf.saved_model.SaveOptions(
             experimental_io_device='/job:localhost')
         self.model.save(saved_model_path, options=save_options)
@@ -173,3 +174,28 @@ class TransUnet():
             model = tf.keras.models.load_model(saved_model_path, options=load_options, compile=False)
             self.model = model
             return model
+    
+    # @staticmethod
+    # def calculate_metric_percase(pred, target):
+    #     pred[pred > 0] = 1
+    #     target[target > 0] = 1
+    #     if pred.sum() > 0 and target.sum()>0:
+    #         dice = metric.binary.dc(pred, target)
+    #         hd95 = metric.binary.hd95(pred, target)
+    #         return dice, hd95
+    #     elif pred.sum() > 0 and target.sum()==0:
+    #         return 1, 0
+    #     else:
+    #         return 0, 0
+
+    # def evaluate(X, label):
+    #     y_pred = self.model(X)
+    #     y_pred = tf.nn.argmax(tf.softmax(
+    #         net(input), dim=1), dim=1).squeeze(0)
+    #     metric_list = []
+    #     for i in range(1, N_CLASSES):
+    #         metric_list.append(self.calculate_metric_percase(
+    #             y_pred == i, label == i))
+
+        
+    
