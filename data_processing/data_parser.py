@@ -10,7 +10,7 @@ import cv2
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 BATCH_SIZE = 24
 N_CLASSES = 9
-BUFFER_SIZE = 50
+BUFFER_SIZE = 72
 DATA_GC_URI = {
     512: 'gs://aga_bucket/synapse-tfrecords-batch25/*.tfrecords',
     224: 'gs://aga_bucket/synapse-224-25/*.tfrecords',
@@ -122,6 +122,8 @@ class DataReader():
 
         label = tf.io.parse_tensor(raw_label, out_type=tf.float32)
         label = tf.reshape(label, shape=[self.height, self.width])
+        # label = tf.cast(label, tf.int32)
+        # label = tf.one_hot(label, depth=N_CLASSES)
         return (image, label)
 
     def get_dataset_small(self, filenames=None):
@@ -145,7 +147,7 @@ class DataReader():
         dataset = dataset.map(
             self.parse_tfr_element, num_parallel_calls=AUTOTUNE
         )
-        
+
         # returns a dataset of (image, label) pairs if labeled=True or just images if labeled=False
         return dataset
 
@@ -163,41 +165,38 @@ class DataReader():
             filenames, num_parallel_reads=AUTOTUNE)
         return records.map(self.parse_tfr_element, num_parallel_calls=AUTOTUNE)
 
-    def get_training_dataset(self, train_fns, batch_size):
+    def get_training_dataset(self, train_fns):
         dataset = self.load_dataset_tpu(train_fns)
 
         # Create some additional training images by randomly flipping and
         # increasing/decreasing the saturation of images in the training set.
         def data_augment(image, label):
-            rand1, rand2 = np.random.uniform(size=(2,1))
+            rand1, rand2 = np.random.uniform(size=(2, 1))
             if rand1 > 0.5:
-                modified, m_label = self.random_rot_flip(image,label)
+                modified, m_label = self.random_rot_flip(image, label)
             elif rand2 > 0.5:
-                modified, m_label = self.random_rotate(image,label)
-
+                modified, m_label = self.random_rotate(image, label)
+            else:
+              modified, m_label = image, label
             m_label = tf.cast(m_label, tf.int32)
             m_label = tf.one_hot(m_label, depth=N_CLASSES)
             return modified, m_label
         augmented = dataset.map(data_augment, num_parallel_calls=AUTOTUNE)
-        return augmented.repeat().shuffle(BUFFER_SIZE).batch(batch_size).prefetch(AUTOTUNE)
+        return augmented.repeat().shuffle(BUFFER_SIZE).batch(BATCH_SIZE, drop_remainder=True).prefetch(AUTOTUNE)
 
-        # Prefetch the next batch while training (autotune prefetch buffer size).
-        return dataset.shuffle(BUFFER_SIZE).batch(batch_size, drop_remainder=True).prefetch(AUTOTUNE)
-
-    def random_rotate(self,image,label):
-        seed = np.random.randint(1000)
-        rot = np.random.uniform(-np.pi/4,np.pi/4)
-        modified = tfa.image.rotate(image,rot)
-        m_label = tfa.image.rotate(label,rot)
+    def random_rotate(self, image, label):
+        rot = np.random.uniform(-np.pi/4, np.pi/4)
+        modified = tfa.image.rotate(image, rot)
+        m_label = tfa.image.rotate(label, rot)
         return modified, m_label
 
-    def random_rot_flip(self,image,label):
+    def random_rot_flip(self, image, label):
         seed = np.random.randint(1000)
         k_90 = np.random.randint(4)
-        m_label = tf.reshape(m_label,(self.width,self.height,1))
+        m_label = tf.reshape(label, (self.width, self.height, 1))
         # vertical flip
-        modified = tf.image.random_flip_left_right(image=image,seed=seed)
-        m_label = tf.image.random_flip_left_right(image=label,seed=seed)
+        modified = tf.image.random_flip_left_right(image=image, seed=seed)
+        m_label = tf.image.random_flip_left_right(image=m_label, seed=seed)
         # horizontal flip
         modified = tf.image.random_flip_up_down(image=modified, seed=seed)
         m_label = tf.image.random_flip_up_down(image=m_label, seed=seed)
@@ -205,25 +204,18 @@ class DataReader():
         modified = tf.image.rot90(image=modified, k=k_90)
         m_label = tf.image.rot90(image=m_label, k=k_90)
 
-        m_label = tf.reshape(m_label,(self.width,self.height))
+        m_label = tf.reshape(m_label, (self.width, self.height))
         return modified, m_label
 
-    def get_dataset_tpu_training(self, tpu_strategy, image_size=224):
-
-        batch_size = 16 * tpu_strategy.num_replicas_in_sync
-        # batch_size=BATCH_SIZE
+    def get_dataset_tpu_training(self, image_size=224):
         gcs_pattern = DATA_GC_URI[image_size]
-        validation_split = 0.1
         filenames = tf.io.gfile.glob(gcs_pattern)
-        split = len(filenames) - int(len(filenames) * validation_split)
-        train_fns = filenames[:split]
-        validation_fns = filenames[split:]
+        train_fns = filenames.remove(
+            "record_4.tfrecords").remove("record_11.tfrecords")
+        validation_fns = ["record_4.tfrecords", "record_11.tfrecords"]
 
-        training_dataset = self.get_training_dataset(train_fns, batch_size)
+        training_dataset = self.get_training_dataset(train_fns, BATCH_SIZE)
         validation_dataset = self.load_dataset(
-            validation_fns).batch(batch_size, drop_remainder=True).prefetch(AUTOTUNE)
+            validation_fns).batch(BATCH_SIZE, drop_remainder=True).prefetch(AUTOTUNE)
 
         return training_dataset, validation_dataset
-
-
-
