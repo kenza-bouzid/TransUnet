@@ -51,6 +51,7 @@ class TransUnet():
         # Tranformer Encoder
         assert self.image_size % self.patch_size == 0, "image_size must be a multiple of patch_size"
         x = tf.keras.layers.Input(shape=(self.image_size, self.image_size, 3))
+        
         ## Embedding
         if self.hybrid:
             grid_size = self.config.grid
@@ -65,7 +66,6 @@ class TransUnet():
             y = x
             features = None
 
-
         y = tf.keras.layers.Conv2D(
             filters=self.hidden_size,
             kernel_size=self.patch_size,
@@ -77,7 +77,8 @@ class TransUnet():
         y = tf.keras.layers.Reshape(
             (y.shape[1] * y.shape[2], self.hidden_size))(y)
         y = encoder_layers.AddPositionEmbs(name="Transformer/posembed_input")(y)
-        # Transformer
+        
+        # Transformer/Encoder
         for n in range(self.n_layers):
             y, _ = encoder_layers.TransformerBlock(
                 n_heads=self.n_heads,
@@ -108,7 +109,8 @@ class TransUnet():
     def load_pretrained(self):
         """Load model weights for a known configuration."""
         if self.hybrid:
-            local_filepath = '../data/R50+ViT-B_16.npz'
+            local_filepath = 'gs://aga_bucket/data/R50+ViT-B_16.npz'
+
         else:
             fname = f"ViT-{self.vit}_{WEIGHTS}.npz"
             origin = f"{BASE_URL}/{fname}"

@@ -117,8 +117,8 @@ class DataReader():
 
         label = tf.io.parse_tensor(raw_label, out_type=tf.float32)
         label = tf.reshape(label, shape=[self.height, self.width])
-        label = tf.cast(label, tf.int32)
-        label = tf.one_hot(label, depth=N_CLASSES)
+        # label = tf.cast(label, tf.int32)
+        # label = tf.one_hot(label, depth=N_CLASSES)
         return (image, label)
 
     def get_dataset_small(self, filenames=None):
@@ -168,8 +168,8 @@ class DataReader():
         #     modified = tf.image.random_flip_left_right(image)
         #     modified = tf.image.random_saturation(modified, 0, 2)
         #     return modified, one_hot_class
-        # augmented = dataset.map(data_augment, num_parallel_calls=AUTO)
-        # return augmented.repeat().shuffle(2048).batch(batch_size).prefetch(AUTO)
+        # augmented = dataset.map(data_augment, num_parallel_calls=AUTOTUNE)
+        # return augmented.repeat().shuffle(BUFFER_SIZE).batch(batch_size).prefetch(AUTOTUNE)
 
         # Prefetch the next batch while training (autotune prefetch buffer size).
         return dataset.shuffle(BUFFER_SIZE).batch(batch_size, drop_remainder=True).prefetch(AUTOTUNE)

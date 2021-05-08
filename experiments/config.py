@@ -18,7 +18,7 @@ def get_b16_none():
     """Returns the ViT-B/16 configuration."""
     config = ml_collections.ConfigDict()
     config.vit = "B_16"
-    config.image_size = 512
+    config.image_size = 384
     config.patch_size = 16
     config.n_layers = 12
     config.hidden_size = 768
