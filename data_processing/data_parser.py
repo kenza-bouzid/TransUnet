@@ -194,10 +194,10 @@ class DataReader():
     def random_rot_flip(self,image,label):
         seed = np.random.randint(1000)
         k_90 = np.random.randint(4)
-        m_label = tf.reshape(m_label,(self.width,self.height,1))
+        m_label = tf.reshape(label,(self.width,self.height,1))
         # vertical flip
         modified = tf.image.random_flip_left_right(image=image,seed=seed)
-        m_label = tf.image.random_flip_left_right(image=label,seed=seed)
+        m_label = tf.image.random_flip_left_right(image=m_label,seed=seed)
         # horizontal flip
         modified = tf.image.random_flip_up_down(image=modified, seed=seed)
         m_label = tf.image.random_flip_up_down(image=m_label, seed=seed)
