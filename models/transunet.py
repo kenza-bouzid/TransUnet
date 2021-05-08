@@ -161,5 +161,15 @@ class TransUnet():
         x = resnet50v2.get_layer("conv4_block6_preact_relu").output
         return resnet50v2, features
 
-
-
+    def save_model(self, tpu_strategy, saved_model_path):
+        save_options = tf.saved_model.SaveOptions(
+            experimental_io_device='/job:localhost')
+        self.model.save(saved_model_path, options=save_options)
+    
+    def load_model(self, tpu_strategy, saved_model_path):
+        with tpu_strategy.scope():
+            load_options = tf.saved_model.LoadOptions(experimental_io_device='/job:localhost')
+            # model = tf.keras.models.load_model(saved_model_path, options=load_options, custom_objects={'loss': vit.TransUnet.segmentation_loss})
+            model = tf.keras.models.load_model(saved_model_path, options=load_options, compile=False)
+            self.model = model
+            return model
