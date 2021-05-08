@@ -12,8 +12,8 @@ BATCH_SIZE = 24
 N_CLASSES = 9
 BUFFER_SIZE = 72
 DATA_GC_URI = {
-    512: 'gs://aga_bucket/synapse-tfrecords-batch25/*.tfrecords',
-    224: 'gs://aga_bucket/synapse-224-25/*.tfrecords',
+    512: 'gs://aga_bucket/synapse-tfrecords-batch25/',
+    224: 'gs://aga_bucket/synapse-224-25/',
 }
 
 
@@ -208,11 +208,11 @@ class DataReader():
         return modified, m_label
 
     def get_dataset_tpu_training(self, image_size=224):
-        gcs_pattern = DATA_GC_URI[image_size]
+        gcs_pattern = DATA_GC_URI[image_size] + "*.tfrecords"
         filenames = tf.io.gfile.glob(gcs_pattern)
         train_fns = filenames.remove(
             "record_4.tfrecords").remove("record_11.tfrecords")
-        validation_fns = ["record_4.tfrecords", "record_11.tfrecords"]
+        validation_fns = [DATA_GC_URI[image_size] + "record_4.tfrecords", DATA_GC_URI[image_size] + "record_11.tfrecords"]
 
         training_dataset = self.get_training_dataset(train_fns, BATCH_SIZE)
         validation_dataset = self.load_dataset(
