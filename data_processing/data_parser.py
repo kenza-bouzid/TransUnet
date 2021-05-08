@@ -165,7 +165,7 @@ class DataReader():
         # Create some additional training images by randomly flipping and
         # increasing/decreasing the saturation of images in the training set.
         def data_augment(image, label):
-            rand1, rand2 = tf.random.uniform(shape=(2,)).numpy()
+            rand1, rand2 = np.random.uniform(size=(2,1))
             if rand1 > 0.5:
                 modified, m_label = self.random_rot_flip(image,label)
             elif rand2 > 0.5:
@@ -181,15 +181,16 @@ class DataReader():
         return dataset.shuffle(BUFFER_SIZE).batch(batch_size, drop_remainder=True).prefetch(AUTOTUNE)
 
     def random_rotate(self,image,label):
-        seed = tf.random.uniform(shape=(), minval=1, maxval=100, dtype=tf.int32).numpy()
-        rot = tf.random.uniform(shape=(), minval=-np.pi/4, maxval=np.pi/4, dtype=tf.float32).numpy()
+        seed = np.random.randint(1000)
+        rot = np.random.uniform(-np.pi/4,np.pi/4)
         modified = tfa.image.rotate(image,rot)
         m_label = tfa.image.rotate(label,rot)
         return modified, m_label
 
     def random_rot_flip(self,image,label):
-        seed = tf.random.uniform(shape=(), minval=1, maxval=100, dtype=tf.int32).numpy()
-        k_90 = tf.random.uniform(shape=(), minval=0, maxval=4, dtype=tf.int32).numpy()
+        seed = np.random.randint(1000)
+        k_90 = np.random.randint(4)
+        m_label = tf.reshape(m_label,(self.width,self.height,1))
         # vertical flip
         modified = tf.image.random_flip_left_right(image=image,seed=seed)
         m_label = tf.image.random_flip_left_right(image=label,seed=seed)
@@ -199,6 +200,8 @@ class DataReader():
         #rot 90
         modified = tf.image.rot90(image=modified, k=k_90)
         m_label = tf.image.rot90(image=m_label, k=k_90)
+
+        m_label = tf.reshape(m_label,(self.width,self.height))
         return modified, m_label
 
     def get_dataset_tpu_training(self, tpu_strategy):
