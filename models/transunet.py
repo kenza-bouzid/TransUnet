@@ -109,13 +109,13 @@ class TransUnet():
     def load_pretrained(self):
         """Load model weights for a known configuration."""
         if self.hybrid:
-            local_filepath = 'gs://aga_bucket/data/R50+ViT-B_16.npz'
-
+            origin = 'https://storage.googleapis.com/aga_bucket/R50%2BViT-B_16.npz'
+            fname = "R50+ViT-B_16.npz"
         else:
             fname = f"ViT-{self.vit}_{WEIGHTS}.npz"
             origin = f"{BASE_URL}/{fname}"
-            local_filepath = tf.keras.utils.get_file(
-                fname, origin, cache_subdir="weights")
+        local_filepath = tf.keras.utils.get_file(
+            fname, origin, cache_subdir="weights")
             
         utils.load_weights_numpy(self.model, local_filepath)
 
