@@ -108,7 +108,7 @@ class TransUnet():
     def load_pretrained(self):
         """Load model weights for a known configuration."""
         if self.hybrid:
-            local_filepath = 'path_to_resnet_weights'
+            local_filepath = '../data/R50+ViT-B_16.npz'
         else:
             fname = f"ViT-{self.vit}_{WEIGHTS}.npz"
             origin = f"{BASE_URL}/{fname}"

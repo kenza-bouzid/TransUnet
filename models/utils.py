@@ -75,7 +75,7 @@ def apply_embedding_weights(target_layer, source_weights):
         grid = source_weights
     elif expected_shape[1] == source_weights.shape[1]-1:
         grid = source_weights[:, 1:]
-    if expected_shape != source_weights.shape:
+    else:
         _, grid = source_weights[0, :1], source_weights[0, 1:]
         sin = int(np.sqrt(grid.shape[0]))
         sout = int(np.sqrt(expected_shape[1]))
