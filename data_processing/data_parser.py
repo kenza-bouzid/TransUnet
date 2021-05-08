@@ -211,7 +211,8 @@ class DataReader():
         gcs_pattern = DATA_GC_URI[image_size] + "*.tfrecords"
         filenames = tf.io.gfile.glob(gcs_pattern)
         filenames.remove(
-            DATA_GC_URI[image_size] + "record_4.tfrecords").remove(DATA_GC_URI[image_size] + "record_11.tfrecords")
+            DATA_GC_URI[image_size] + "record_4.tfrecords")
+        filenames.remove(DATA_GC_URI[image_size] + "record_11.tfrecords")
         train_fns = filenames
         validation_fns = [DATA_GC_URI[image_size] + "record_4.tfrecords", DATA_GC_URI[image_size] + "record_11.tfrecords"]
 
