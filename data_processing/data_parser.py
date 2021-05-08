@@ -210,9 +210,9 @@ class DataReader():
     def get_dataset_tpu_training(self, image_size=224):
         gcs_pattern = DATA_GC_URI[image_size] + "*.tfrecords"
         filenames = tf.io.gfile.glob(gcs_pattern)
-        
-        train_fns = filenames.remove(
+        filenames.remove(
             DATA_GC_URI[image_size] + "record_4.tfrecords").remove(DATA_GC_URI[image_size] + "record_11.tfrecords")
+        train_fns = filenames
         validation_fns = [DATA_GC_URI[image_size] + "record_4.tfrecords", DATA_GC_URI[image_size] + "record_11.tfrecords"]
 
         training_dataset = self.get_training_dataset(train_fns, BATCH_SIZE)
