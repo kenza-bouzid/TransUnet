@@ -216,7 +216,7 @@ class DataReader():
         train_fns = filenames
         validation_fns = [DATA_GC_URI[image_size] + "record_4.tfrecords", DATA_GC_URI[image_size] + "record_11.tfrecords"]
 
-        training_dataset = self.get_training_dataset(train_fns, BATCH_SIZE)
+        training_dataset = self.get_training_dataset(train_fns)
         validation_dataset = self.load_dataset(
             validation_fns).batch(BATCH_SIZE, drop_remainder=True).prefetch(AUTOTUNE)
 
