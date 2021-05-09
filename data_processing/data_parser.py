@@ -1,6 +1,5 @@
 from scipy.ndimage.interpolation import zoom
 from os.path import isfile, join
-from functools import partial 
 from os import listdir
 from tqdm import tqdm
 
@@ -108,7 +107,7 @@ class DataReader():
         self.width = width
         self.depth = depth
 
-    def parse_tfr_element(self, element, training=True):
+    def parse_tfr_element(self, element):
         data = {
             'label': tf.io.FixedLenFeature([], tf.string),
             'image': tf.io.FixedLenFeature([], tf.string),
@@ -123,9 +122,8 @@ class DataReader():
 
         label = tf.io.parse_tensor(raw_label, out_type=tf.float32)
         label = tf.reshape(label, shape=[self.height, self.width])
-        if not training:
-            label = tf.cast(label, tf.int32)
-            label = tf.one_hot(label, depth=N_CLASSES)
+        # label = tf.cast(label, tf.int32)
+        # label = tf.one_hot(label, depth=N_CLASSES)
         return (image, label)
 
     def get_dataset_small(self, filenames=None):
@@ -161,14 +159,14 @@ class DataReader():
         dataset = dataset.batch(BATCH_SIZE)
         return dataset
 
-    def load_dataset_tpu(self, filenames, training=True):
+    def load_dataset_tpu(self, filenames):
       # Read from TFRecords. For optimal performance, we interleave reads from multiple files.
         records = tf.data.TFRecordDataset(
             filenames, num_parallel_reads=AUTOTUNE)
-        return records.map(partial(self.parse_tfr_element, training), num_parallel_calls=AUTOTUNE)
+        return records.map(self.parse_tfr_element, num_parallel_calls=AUTOTUNE)
 
     def get_training_dataset(self, train_fns):
-        dataset = self.load_dataset_tpu(train_fns, training=True)
+        dataset = self.load_dataset_tpu(train_fns)
 
         # Create some additional training images by randomly flipping and
         # increasing/decreasing the saturation of images in the training set.
@@ -209,6 +207,11 @@ class DataReader():
         m_label = tf.reshape(m_label, (self.width, self.height))
         return modified, m_label
 
+    def one_hot_encode(self, image, label):
+        label = tf.cast(label, tf.int32)
+        label = tf.one_hot(label, depth=N_CLASSES)
+        return (image, label)
+
     def get_dataset_tpu_training(self, image_size=224):
         gcs_pattern = DATA_GC_URI[image_size] + "*.tfrecords"
         filenames = tf.io.gfile.glob(gcs_pattern)
@@ -219,7 +222,7 @@ class DataReader():
         validation_fns = [DATA_GC_URI[image_size] + "record_4.tfrecords", DATA_GC_URI[image_size] + "record_11.tfrecords"]
 
         training_dataset = self.get_training_dataset(train_fns)
-        validation_dataset = self.load_dataset_tpu(
-            validation_fns, training=False).batch(BATCH_SIZE, drop_remainder=True).prefetch(AUTOTUNE)
+        validation_dataset = self.load_dataset(
+            validation_fns).map(self.one_hot_encode, num_parallel_calls=AUTOTUNE)).batch(BATCH_SIZE, drop_remainder = True).prefetch(AUTOTUNE)
 
         return training_dataset, validation_dataset
