@@ -190,7 +190,7 @@ class TransUnet():
 
     def evaluate(self, X, label):
         y_pred = self.model(X)
-        y_pred = tf.nn.argmax(tf.softmax(
+        y_pred = tf.math.argmax(tf.softmax(
             y_pred, dim=1), dim=1).squeeze(0)
         metric_list = []
         for i in range(1, N_CLASSES):
