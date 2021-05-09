@@ -223,6 +223,6 @@ class DataReader():
 
         training_dataset = self.get_training_dataset(train_fns)
         validation_dataset = self.load_dataset(
-            validation_fns).map(self.one_hot_encode, num_parallel_calls=AUTOTUNE)).batch(BATCH_SIZE, drop_remainder = True).prefetch(AUTOTUNE)
+            validation_fns).map(self.one_hot_encode, num_parallel_calls=AUTOTUNE).batch(BATCH_SIZE, drop_remainder = True).prefetch(AUTOTUNE)
 
         return training_dataset, validation_dataset
