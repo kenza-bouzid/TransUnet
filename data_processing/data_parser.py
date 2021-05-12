@@ -100,7 +100,7 @@ class DataWriter():
             print(f"Wrote batch {i} to TFRecord")
 
     def write_test_tfrecords(self):
-        for filename in self.filenames:
+        for filename in tqdm(self.filenames):
             data = h5py.File(self.src_path + filename, mode='r')
             image3d, label3d = data['image'], data['label']
             writer = tf.io.TFRecordWriter(self.dest_path + filename[:-7] + '.tfrecords')
