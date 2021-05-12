@@ -1,6 +1,6 @@
-from data_processing.data_parser import N_CLASSES
 import models.encoder_layers as encoder_layers
 import models.decoder_layers as decoder_layers
+import matplotlib.pyplot as plt
 import tensorflow_addons as tfa
 import models.utils as utils
 from medpy import metric
@@ -10,8 +10,12 @@ tfk = tf.keras
 tfkl = tfk.layers
 tfm = tf.math
 tfkc = tfk.callbacks
+
 N_CLASSES = 9
 MODELS_URL = 'https://storage.googleapis.com/vit_models/imagenet21k/'
+TRAINING_SAMPLES = 2211
+VALIDATION_SAMPLES = 260
+
 
 class TransUnet():
     def __init__(self, config):
@@ -113,6 +117,35 @@ class TransUnet():
             weight_decay=1e-4, momentum=.9, learning_rate=lr_schedule)
 
         self.model.compile(optimizer=optimizer, loss=[TransUnet.segmentation_loss])
+
+    def train(self, training_dataset, validation_dataset, save_path, batch_size=24, show_history=False):
+
+        checkpoint_filepath = save_path + '/checkpoint/'
+        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint_filepath,
+            save_weights_only=True,
+            monitor='val_loss',
+            mode='min',
+            save_best_only=True)
+
+        steps_per_epoch = (TRAINING_SAMPLES-VALIDATION_SAMPLES) // batch_size
+        history = self.model.fit(training_dataset, epochs=3, batch_size=24, verbose=1,
+                                    steps_per_epoch=steps_per_epoch, validation_data=validation_dataset, callbacks=[model_checkpoint_callback])
+
+        self.model.load_weights(checkpoint_filepath)
+
+        saved_model_path = save_path + "/model"
+        self.save_model(saved_model_path)
+
+        if show_history:
+            plt.figure()
+            plt.plot(history.history["loss"], label="training loss")
+            plt.plot(history.history["val_loss"], label="validation loss")
+            plt.legend()
+            plt.show()
+
+        return history
+
 
     @tf.function
     def segmentation_loss(y_true, y_pred):
