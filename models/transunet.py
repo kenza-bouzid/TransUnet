@@ -137,6 +137,8 @@ class TransUnet():
         saved_model_path = save_path + "/model"
         self.save_model(saved_model_path)
 
+        print(f"Model saved in {saved_model_path}")
+
         if show_history:
             plt.figure()
             plt.plot(history.history["loss"], label="training loss")
@@ -145,7 +147,6 @@ class TransUnet():
             plt.show()
 
         return history
-
 
     @tf.function
     def segmentation_loss(y_true, y_pred):
