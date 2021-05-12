@@ -72,13 +72,14 @@ class DataWriter():
             filename = self.dest_path + file[:-3]
             self.write_image_to_tfr(image, label, filename)
 
-    def process_data(self, data):
-        image = cv2.cvtColor(data['image'], cv2.COLOR_GRAY2RGB)
+    def process_data(self, image, label):
+        
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         w, h, c = image.shape
         if w != self.width or h != self.height:
             image = zoom(
                 image, (self.width / w, self.height / h, 1), order=3)
-            label = zoom(data['label'], (self.width /
+            label = zoom(label, (self.width /
                                          w, self.height / h), order=0)
         return image, label
 
@@ -92,7 +93,7 @@ class DataWriter():
                 (i+1) < self.n_samples else self.n_samples
             for file in self.filenames[start: end]:
                 data = np.load(self.src_path + file)
-                image, label = self.process_data(data)
+                image, label = self.process_data(data['image'], data['label'])
                 out = self.parse_single_image(image=image, label=label)
                 writer.write(out.SerializeToString())
             writer.close()
@@ -104,6 +105,7 @@ class DataWriter():
             image3d, label3d = data['image'], data['label']
             writer = tf.io.TFRecordWriter(self.dest_path + filename[:-7] + '.tfrecords')
             for image, label in zip(image3d, label3d):
+                image, label = self.process_data(image, label)
                 out = self.parse_single_image(image=image, label=label)
                 writer.write(out.SerializeToString())
             writer.close()
