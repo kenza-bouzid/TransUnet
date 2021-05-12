@@ -25,7 +25,7 @@ DATA_GC_URI_TEST = {
 }
 
 class DataWriter():
-    def __init__(self, src_path, dest_path, batch_size=25, height=512, width=512):
+    def __init__(self, src_path, dest_path="/", batch_size=25, height=512, width=512):
         self.src_path = src_path
         self.dest_path = dest_path
         self.filenames = [f for f in listdir(
@@ -107,7 +107,8 @@ class DataWriter():
     def write_test_tfrecords(self):
         for filename in tqdm(self.filenames):
             data = h5py.File(self.src_path + filename, mode='r')
-            image3d, label3d = data['image'], data['label']
+            image3d, label3d = data['image'][:].astype(
+                'float32'), data['label'][:].astype('float32')
             writer = tf.io.TFRecordWriter(self.dest_path + filename[:-7] + '.tfrecords')
             for image, label in zip(image3d, label3d):
                 image, label = self.process_data(image, label)
@@ -115,6 +116,21 @@ class DataWriter():
                 writer.write(out.SerializeToString())
             writer.close()
             print(f"Wrote {filename} to TFRecord")
+
+    def write_test_list(self):
+        testdataset = []
+        for filename in tqdm(self.filenames):
+            data = h5py.File(self.src_path + filename, mode='r')
+            image3d, label3d = data['image'][:].astype(
+                'float32'), data['label'][:].astype('float32')
+            image3d_processed, label3d_processed  = [], []
+            for image, label in zip(image3d, label3d):
+                image, label = self.process_data(image, label)
+                label = tf.one_hot(label, depth=9).numpy()
+                image3d_processed.append(image)
+                label3d_processed.append(label)
+            testdataset.append({'image': np.array(image3d_processed), 'label': np.array(label3d_processed)})
+        return testdataset
 
 class DataReader():
 
@@ -251,5 +267,5 @@ class DataReader():
         gcs_pattern = DATA_GC_URI_TEST[image_size] + "*.tfrecords"
         filenames = tf.io.gfile.glob(gcs_pattern)
         test_dataset = self.load_dataset(filenames).map(
-            self.one_hot_encode, num_parallel_calls=AUTOTUNE).batch(BATCH_SIZE).prefetch(AUTOTUNE)
+            self.one_hot_encode, num_parallel_calls=AUTOTUNE).prefetch(AUTOTUNE)
         return test_dataset
