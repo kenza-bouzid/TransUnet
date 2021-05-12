@@ -118,7 +118,7 @@ class TransUnet():
 
         self.model.compile(optimizer=optimizer, loss=[TransUnet.segmentation_loss])
 
-    def train(self, training_dataset, validation_dataset, save_path, batch_size=24, show_history=False):
+    def train(self, training_dataset, validation_dataset, save_path, epochs=150, batch_size=24, show_history=False):
 
         checkpoint_filepath = save_path + '/checkpoint/'
         model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -129,7 +129,7 @@ class TransUnet():
             save_best_only=True)
 
         steps_per_epoch = (TRAINING_SAMPLES-VALIDATION_SAMPLES) // batch_size
-        history = self.model.fit(training_dataset, epochs=3, batch_size=24, verbose=1,
+        history = self.model.fit(training_dataset, epochs=epochs, batch_size=batch_size, verbose=1,
                                     steps_per_epoch=steps_per_epoch, validation_data=validation_dataset, callbacks=[model_checkpoint_callback])
 
         self.model.load_weights(checkpoint_filepath)
