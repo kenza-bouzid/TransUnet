@@ -251,5 +251,5 @@ class DataReader():
         gcs_pattern = DATA_GC_URI_TEST[image_size] + "*.tfrecords"
         filenames = tf.io.gfile.glob(gcs_pattern)
         test_dataset = self.load_dataset(filenames).map(
-            self.one_hot_encode, num_parallel_calls=AUTOTUNE).batch(BATCH_SIZE).prefetch(AUTOTUNE)
+            self.one_hot_encode, num_parallel_calls=AUTOTUNE).prefetch(AUTOTUNE)
         return test_dataset
