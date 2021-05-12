@@ -172,29 +172,7 @@ class TransUnet():
             model = tf.keras.models.load_model(saved_model_path, options=load_options, compile=False)
             self.model = model
             return model
-    
-    @staticmethod
-    def calculate_metric_percase(pred, target):
-        pred[pred > 0] = 1
-        target[target > 0] = 1
-        if pred.sum() > 0 and target.sum()>0:
-            dice = metric.binary.dc(pred, target)
-            hd95 = metric.binary.hd95(pred, target)
-            return dice, hd95
-        # elif pred.sum() > 0 and target.sum()==0:
-        #     return 1, 0
-        else:
-            return 0, 0
 
-    def evaluate(self, X, label):
-        y_pred = self.model(X)
-        y_pred = tf.math.argmax(tf.softmax(
-            y_pred, dim=1), dim=1).squeeze(0)
-        metric_list = []
-        for i in range(1, N_CLASSES):
-            metric_list.append(self.calculate_metric_percase(
-                y_pred == i, label == i))
-        return metric_list
 
         
     
