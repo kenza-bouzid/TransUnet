@@ -6,7 +6,9 @@ from tqdm import tqdm
 import tensorflow_addons as tfa
 import tensorflow as tf
 import numpy as np
+import h5py
 import cv2
+
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 BATCH_SIZE = 24
 N_CLASSES = 9
@@ -96,6 +98,16 @@ class DataWriter():
             writer.close()
             print(f"Wrote batch {i} to TFRecord")
 
+    def write_test_tfrecords(self):
+        for filename in self.filenames:
+            data = h5py.File(self.src_path + filename, mode='r')
+            image3d, label3d = data['image'], data['label']
+            writer = tf.io.TFRecordWriter(self.dest_path + filename[:-7] + '.tfrecords')
+            for image, label in zip(image3d, label3d):
+                out = self.parse_single_image(image=image, label=label)
+                writer.write(out.SerializeToString())
+            writer.close()
+            print(f"Wrote {filename} to TFRecord")
 
 class DataReader():
 
