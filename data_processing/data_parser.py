@@ -107,7 +107,8 @@ class DataWriter():
     def write_test_tfrecords(self):
         for filename in tqdm(self.filenames):
             data = h5py.File(self.src_path + filename, mode='r')
-            image3d, label3d = data['image'], data['label']
+            image3d, label3d = data['image'][:].astype(
+                'float32'), data['label'][:].astype('float32')
             writer = tf.io.TFRecordWriter(self.dest_path + filename[:-7] + '.tfrecords')
             for image, label in zip(image3d, label3d):
                 image, label = self.process_data(image, label)
