@@ -107,14 +107,14 @@ class TransUnet():
         self.load_pretrained()
 
         initial_learning_rate = 0.01
-        lr_schedule = tfk.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate,
-            decay_steps=100000,
-            decay_rate=0.96,
-            staircase=True)
+        # lr_schedule = tfk.optimizers.schedules.ExponentialDecay(
+        #     initial_learning_rate,
+        #     decay_steps=100000,
+        #     decay_rate=0.96,
+        #     staircase=True)
         
         optimizer = tfa.optimizers.SGDW(
-            weight_decay=1e-4, momentum=.9, learning_rate=lr_schedule)
+            weight_decay=1e-4, momentum=.9, learning_rate=0.001)
 
         self.model.compile(optimizer=optimizer, loss=[TransUnet.segmentation_loss])
 
