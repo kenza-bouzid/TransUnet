@@ -103,7 +103,7 @@ class TransUnet():
             
         utils.load_weights_numpy(self.model, local_filepath)
 
-    def compile(self):
+    def compile(self, lr=1e-3):
         self.load_pretrained()
 
         initial_learning_rate = 0.01
@@ -114,7 +114,7 @@ class TransUnet():
         #     staircase=True)
         
         optimizer = tfa.optimizers.SGDW(
-            weight_decay=1e-4, momentum=.9, learning_rate=0.001)
+            weight_decay=1e-4, momentum=.9, learning_rate=lr)
 
         self.model.compile(optimizer=optimizer, loss=[TransUnet.segmentation_loss])
 
