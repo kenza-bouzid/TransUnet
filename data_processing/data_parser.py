@@ -6,16 +6,23 @@ from tqdm import tqdm
 import tensorflow_addons as tfa
 import tensorflow as tf
 import numpy as np
+import h5py
 import cv2
+
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 BATCH_SIZE = 24
 N_CLASSES = 9
 BUFFER_SIZE = 72
-DATA_GC_URI = {
+
+DATA_GC_URI_TRAIN = {
     512: 'gs://aga_bucket/synapse-tfrecords-batch25/',
     224: 'gs://aga_bucket/synapse-224-25/',
 }
 
+DATA_GC_URI_TEST = {
+    512: 'gs://aga_bucket/synapse-test-512/',
+    224: 'gs://aga_bucket/synapse-test-224/',
+}
 
 class DataWriter():
     def __init__(self, src_path, dest_path, batch_size=25, height=512, width=512):
@@ -70,13 +77,14 @@ class DataWriter():
             filename = self.dest_path + file[:-3]
             self.write_image_to_tfr(image, label, filename)
 
-    def process_data(self, data):
-        image = cv2.cvtColor(data['image'], cv2.COLOR_GRAY2RGB)
+    def process_data(self, image, label):
+        
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         w, h, c = image.shape
         if w != self.width or h != self.height:
             image = zoom(
                 image, (self.width / w, self.height / h, 1), order=3)
-            label = zoom(data['label'], (self.width /
+            label = zoom(label, (self.width /
                                          w, self.height / h), order=0)
         return image, label
 
@@ -90,12 +98,23 @@ class DataWriter():
                 (i+1) < self.n_samples else self.n_samples
             for file in self.filenames[start: end]:
                 data = np.load(self.src_path + file)
-                image, label = self.process_data(data)
+                image, label = self.process_data(data['image'], data['label'])
                 out = self.parse_single_image(image=image, label=label)
                 writer.write(out.SerializeToString())
             writer.close()
             print(f"Wrote batch {i} to TFRecord")
 
+    def write_test_tfrecords(self):
+        for filename in tqdm(self.filenames):
+            data = h5py.File(self.src_path + filename, mode='r')
+            image3d, label3d = data['image'], data['label']
+            writer = tf.io.TFRecordWriter(self.dest_path + filename[:-7] + '.tfrecords')
+            for image, label in zip(image3d, label3d):
+                image, label = self.process_data(image, label)
+                out = self.parse_single_image(image=image, label=label)
+                writer.write(out.SerializeToString())
+            writer.close()
+            print(f"Wrote {filename} to TFRecord")
 
 class DataReader():
 
@@ -207,17 +226,30 @@ class DataReader():
         m_label = tf.reshape(m_label, (self.width, self.height))
         return modified, m_label
 
+    def one_hot_encode(self, image, label):
+        label = tf.cast(label, tf.int32)
+        label = tf.one_hot(label, depth=N_CLASSES)
+        return (image, label)
+
     def get_dataset_tpu_training(self, image_size=224):
-        gcs_pattern = DATA_GC_URI[image_size] + "*.tfrecords"
+        gcs_pattern = DATA_GC_URI_TRAIN[image_size] + "*.tfrecords"
         filenames = tf.io.gfile.glob(gcs_pattern)
         filenames.remove(
-            DATA_GC_URI[image_size] + "record_4.tfrecords")
-        filenames.remove(DATA_GC_URI[image_size] + "record_11.tfrecords")
+            DATA_GC_URI_TRAIN[image_size] + "record_4.tfrecords")
+        filenames.remove(DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords")
         train_fns = filenames
-        validation_fns = [DATA_GC_URI[image_size] + "record_4.tfrecords", DATA_GC_URI[image_size] + "record_11.tfrecords"]
+        validation_fns = [DATA_GC_URI_TRAIN[image_size] + "record_4.tfrecords",
+                          DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords"]
 
         training_dataset = self.get_training_dataset(train_fns)
         validation_dataset = self.load_dataset(
-            validation_fns).batch(BATCH_SIZE, drop_remainder=True).prefetch(AUTOTUNE)
+            validation_fns).map(self.one_hot_encode, num_parallel_calls=AUTOTUNE).batch(BATCH_SIZE, drop_remainder = True).prefetch(AUTOTUNE)
 
         return training_dataset, validation_dataset
+
+    def get_test_data(self, image_size=224):
+        gcs_pattern = DATA_GC_URI_TEST[image_size] + "*.tfrecords"
+        filenames = tf.io.gfile.glob(gcs_pattern)
+        test_dataset = self.load_dataset(filenames).map(
+            self.one_hot_encode, num_parallel_calls=AUTOTUNE).batch(BATCH_SIZE).prefetch(AUTOTUNE)
+        return test_dataset
