@@ -126,7 +126,7 @@ class DataWriter():
             image3d_processed, label3d_processed  = [], []
             for image, label in zip(image3d, label3d):
                 image, label = self.process_data(image, label)
-                label = tf.one_hot(label, depth=9).numpy()
+                label = tf.one_hot(label, depth=N_CLASSES).numpy()
                 image3d_processed.append(image)
                 label3d_processed.append(label)
             testdataset.append({'image': np.array(image3d_processed), 'label': np.array(label3d_processed)})
