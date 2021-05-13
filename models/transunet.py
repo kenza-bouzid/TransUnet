@@ -150,12 +150,20 @@ class TransUnet():
         return history
 
     def train(self, training_dataset, save_path, epochs=150, batch_size=24, show_history=True):
+        
+        checkpoint_filepath = save_path + '/checkpoint/'
+        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+            filepath=checkpoint_filepath,
+            save_weights_only=True,
+            monitor='loss',
+            mode='min',
+            save_best_only=True)
 
         steps_per_epoch = TRAINING_SAMPLES // batch_size
         history = self.model.fit(training_dataset, epochs=epochs, batch_size=batch_size, verbose=1,
-                                 steps_per_epoch=steps_per_epoch)
+                                 steps_per_epoch=steps_per_epoch, callbacks=[model_checkpoint_callback])
 
-        self.save_model(save_path)
+        self.save_model(save_path + '/model')
         print(f"Model saved in {save_path}")
         if show_history:
             plt.figure()
