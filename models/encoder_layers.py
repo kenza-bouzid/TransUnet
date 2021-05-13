@@ -21,7 +21,7 @@ class AddPositionEmbs(tfkl.Layer):
                 shape=(1, input_shape[1], input_shape[2])
             ),
             dtype="float32",
-            trainable=True,
+            trainable=False,
         )
 
     def call(self, inputs):

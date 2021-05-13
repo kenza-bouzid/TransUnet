@@ -103,16 +103,20 @@ class TransUnet():
             
         utils.load_weights_numpy(self.model, local_filepath)
 
-    def compile(self, lr=1e-3):
+    def compile(self, lr=None, epochs=150, batch_size=24):
         self.load_pretrained()
-
-        initial_learning_rate = 0.01
-        # lr_schedule = tfk.optimizers.schedules.ExponentialDecay(
-        #     initial_learning_rate,
-        #     decay_steps=100000,
-        #     decay_rate=0.96,
-        #     staircase=True)
-        
+        if lr is None:
+            steps_per_epoch = (
+                TRAINING_SAMPLES-VALIDATION_SAMPLES) // batch_size
+            starter_learning_rate = 0.01
+            end_learning_rate = 0
+            decay_steps = epochs * steps_per_epoch
+            lr = tf.keras.optimizers.schedules.PolynomialDecay(
+            starter_learning_rate,
+            decay_steps,
+            end_learning_rate,
+            power=0.9)
+ 
         optimizer = tfa.optimizers.SGDW(
             weight_decay=1e-4, momentum=.9, learning_rate=lr)
 
