@@ -17,7 +17,6 @@ class SegmentationHead(tfkl.Layer):
     def build(self, input_shape):
         self.conv = tfkl.Conv2D(
             filters=self.filters, kernel_size=self.kernel_size, padding="same")
-        ## TODO make upsampling conditional
         self.upsampling = tfkl.UpSampling2D(
             size=self.upsampling_factor, interpolation="bilinear")
 
@@ -39,15 +38,15 @@ class Conv2DReLu(tfkl.Layer):
     def build(self, input_shape):
         self.conv = tfkl.Conv2D(
             filters=self.filters, kernel_size=self.kernel_size, strides=self.strides,
-            padding=self.padding, activation="relu", use_bias=False)
+            padding=self.padding, use_bias=False)
 
         self.bn = tfkl.BatchNormalization(momentum=0.9)
 
     def call(self, inputs):
         conv = self.conv(inputs)
         bn = self.bn(conv)
-        ## TODO put relu before or after bn
-        return bn 
+        relu = tf.nn.relu(bn)
+        return relu 
 
 class DecoderBlock(tfkl.Layer):
     def __init__(self, filters, **kwargs):
