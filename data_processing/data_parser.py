@@ -247,21 +247,24 @@ class DataReader():
         label = tf.one_hot(label, depth=N_CLASSES)
         return (image, label)
 
-    def get_dataset_tpu_training(self, image_size=224):
+    def get_dataset_tpu_training(self, image_size=224, validation=True):
         gcs_pattern = DATA_GC_URI_TRAIN[image_size] + "*.tfrecords"
         filenames = tf.io.gfile.glob(gcs_pattern)
-        filenames.remove(
-            DATA_GC_URI_TRAIN[image_size] + "record_4.tfrecords")
-        filenames.remove(DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords")
-        train_fns = filenames
-        validation_fns = [DATA_GC_URI_TRAIN[image_size] + "record_4.tfrecords",
-                          DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords"]
+        if validation:
+            filenames.remove(
+                DATA_GC_URI_TRAIN[image_size] + "record_4.tfrecords")
+            filenames.remove(DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords")
+            train_fns = filenames
+            validation_fns = [DATA_GC_URI_TRAIN[image_size] + "record_4.tfrecords",
+                            DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords"]
 
-        training_dataset = self.get_training_dataset(train_fns)
-        validation_dataset = self.load_dataset(
-            validation_fns).map(self.one_hot_encode, num_parallel_calls=AUTOTUNE).batch(BATCH_SIZE, drop_remainder = True).prefetch(AUTOTUNE)
-
-        return training_dataset, validation_dataset
+            validation_dataset = self.load_dataset(
+                validation_fns).map(self.one_hot_encode, num_parallel_calls=AUTOTUNE).batch(BATCH_SIZE, drop_remainder = True).prefetch(AUTOTUNE)
+        
+            training_dataset = self.get_training_dataset(train_fns)
+            return training_dataset, validation_dataset
+        
+        return self.get_training_dataset(filenames)
 
     def get_test_data(self, image_size=224):
         gcs_pattern = DATA_GC_URI_TEST[image_size] + "*.tfrecords"
