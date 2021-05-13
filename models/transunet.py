@@ -164,7 +164,7 @@ class TransUnet():
 
         loss = 0.0
         for c in range(N_CLASSES):
-            loss += dice_per_class(y_true[:,c], y_pred[:,c])
+            loss += TransUnet.dice_per_class(y_true[:,c], y_pred[:,c])
         
         return loss/N_CLASSES
 
