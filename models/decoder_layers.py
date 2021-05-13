@@ -5,7 +5,7 @@ import tensorflow_addons as tfa
 tfk = tf.keras
 tfkl = tfk.layers
 tfm = tf.math
-
+L2_WEIGHT_DECAY = 1e-4
 
 class SegmentationHead(tfkl.Layer):
     def __init__(self, name="seg_head", filters=9, kernel_size=1, upsampling_factor=16, ** kwargs):
@@ -16,7 +16,9 @@ class SegmentationHead(tfkl.Layer):
 
     def build(self, input_shape):
         self.conv = tfkl.Conv2D(
-            filters=self.filters, kernel_size=self.kernel_size, padding="same")
+            filters=self.filters, kernel_size=self.kernel_size, padding="same", 
+            kernel_regularizer=tf.keras.regularizers.L1(L2_WEIGHT_DECAY),
+            activity_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY))
         self.upsampling = tfkl.UpSampling2D(
             size=self.upsampling_factor, interpolation="bilinear")
 
@@ -38,7 +40,8 @@ class Conv2DReLu(tfkl.Layer):
     def build(self, input_shape):
         self.conv = tfkl.Conv2D(
             filters=self.filters, kernel_size=self.kernel_size, strides=self.strides,
-            padding=self.padding, use_bias=False)
+            padding=self.padding, use_bias=False, kernel_regularizer=tf.keras.regularizers.L1(L2_WEIGHT_DECAY),
+            activity_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY))
 
         self.bn = tfkl.BatchNormalization(momentum=0.9)
 
