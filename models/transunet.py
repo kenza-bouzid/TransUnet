@@ -14,7 +14,7 @@ tfkc = tfk.callbacks
 N_CLASSES = 9
 MODELS_URL = 'https://storage.googleapis.com/vit_models/imagenet21k/'
 TRAINING_SAMPLES = 2211
-VALIDATION_SAMPLES = 260
+VALIDATION_SAMPLES = 0
 
 
 class TransUnet():
@@ -103,11 +103,11 @@ class TransUnet():
             
         utils.load_weights_numpy(self.model, local_filepath)
 
-    def compile(self, lr=None, epochs=150, batch_size=24):
+    def compile(self, lr=None, epochs=150, batch_size=24, validation_samples=260):
         self.load_pretrained()
         if lr is None:
             steps_per_epoch = (
-                TRAINING_SAMPLES-VALIDATION_SAMPLES) // batch_size
+                TRAINING_SAMPLES-validation_samples) // batch_size
             starter_learning_rate = 0.01
             end_learning_rate = 0
             decay_steps = epochs * steps_per_epoch
@@ -122,8 +122,7 @@ class TransUnet():
 
         self.model.compile(optimizer=optimizer, loss=[TransUnet.segmentation_loss])
 
-    def train(self, training_dataset, validation_dataset, save_path, epochs=150, batch_size=24, show_history=True):
-
+    def train(self, training_dataset, save_path, validation_dataset=None, validation_samples=260, epochs=150, batch_size=24, show_history=True):
         checkpoint_filepath = save_path + '/checkpoint/'
         model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_filepath,
@@ -132,7 +131,7 @@ class TransUnet():
             mode='min',
             save_best_only=True)
 
-        steps_per_epoch = (TRAINING_SAMPLES-VALIDATION_SAMPLES) // batch_size
+        steps_per_epoch = (TRAINING_SAMPLES-validation_samples) // batch_size
         history = self.model.fit(training_dataset, epochs=epochs, batch_size=batch_size, verbose=1,
                                     steps_per_epoch=steps_per_epoch, validation_data=validation_dataset, callbacks=[model_checkpoint_callback])
 
