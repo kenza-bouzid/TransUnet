@@ -43,10 +43,10 @@ class Conv2DReLu(tfkl.Layer):
         self.bn = tfkl.BatchNormalization(momentum=0.9)
 
     def call(self, inputs):
-        conv = self.conv(inputs)
-        bn = self.bn(conv)
-        relu = tf.nn.relu(bn)
-        return relu 
+        x = self.conv(inputs)
+        x = self.bn(x)
+        x = tf.nn.relu(x)
+        return x 
 
 class DecoderBlock(tfkl.Layer):
     def __init__(self, filters, **kwargs):
