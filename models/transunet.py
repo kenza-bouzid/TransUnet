@@ -168,7 +168,14 @@ class TransUnet():
             y_true, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
         y_pred = tf.reshape(
             pred_tensor, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
+        loss = 0.0
+        for c in N_CLASSES:
+            loss += dice_per_class(y_true[:,:,c], y_pred[:,:,c])
+        
+        return loss/N_CLASSES
 
+    @tf.function
+    def dice_per_class(y_true, y_pred, eps):
         intersect = tf.reduce_sum(y_true * y_pred)
         y_sum = tf.reduce_sum(y_true * y_true)
         z_sum = tf.reduce_sum(y_pred * y_pred)
