@@ -160,19 +160,20 @@ class TransUnet():
         return 0.5 * cross_entropy_loss + 0.5 * dice_loss
 
     @tf.function
-    def gen_dice(y_true, y_pred, eps=1e-5):
+    def gen_dice(y_true, y_pred):
         """both tensors are [b, h, w, classes] and y_pred is in logit form"""
 
         # [b, h, w, classes]
         pred_tensor = tf.nn.softmax(y_pred)
-        y_true_shape = tf.shape(y_true)
 
-        # [b, h*w, classes]
-        y_true = tf.reshape(
-            y_true, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
-        y_pred = tf.reshape(
-            pred_tensor, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
+        loss = 0.0
+        for c in range(N_CLASSES):
+            loss += TransUnet.dice_per_class(y_true[:,c], y_pred[:,c])
+        
+        return loss/N_CLASSES
 
+    @tf.function
+    def dice_per_class(y_true, y_pred, eps=1e-5):
         intersect = tf.reduce_sum(y_true * y_pred)
         y_sum = tf.reduce_sum(y_true * y_true)
         z_sum = tf.reduce_sum(y_pred * y_pred)
