@@ -115,7 +115,7 @@ class TransUnet():
                 decay_steps,
                 end_learning_rate,
                 power=0.9)
-        opt = tf.keras.optimizers.SGD(learning_rate=lr, momentum=0.9)
+        optimizer = tf.keras.optimizers.SGD(learning_rate=lr, momentum=0.9)
 
         self.model.compile(optimizer=optimizer, loss=[
                            TransUnet.segmentation_loss])
