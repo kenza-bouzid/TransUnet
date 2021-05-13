@@ -161,16 +161,10 @@ class TransUnet():
 
         # [b, h, w, classes]
         pred_tensor = tf.nn.softmax(y_pred)
-        y_true_shape = tf.shape(y_true)
 
-        # [b, h*w, classes]
-        y_true = tf.reshape(
-            y_true, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
-        y_pred = tf.reshape(
-            pred_tensor, [-1, y_true_shape[1]*y_true_shape[2], y_true_shape[3]])
         loss = 0.0
-        for c in N_CLASSES:
-            loss += dice_per_class(y_true[:,:,c], y_pred[:,:,c])
+        for c in range(N_CLASSES):
+            loss += dice_per_class(y_true[:,c], y_pred[:,c])
         
         return loss/N_CLASSES
 
