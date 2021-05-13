@@ -14,8 +14,6 @@ tfkc = tfk.callbacks
 N_CLASSES = 9
 MODELS_URL = 'https://storage.googleapis.com/vit_models/imagenet21k/'
 TRAINING_SAMPLES = 2211
-VALIDATION_SAMPLES = 0
-
 
 class TransUnet():
     def __init__(self, config):
@@ -122,7 +120,7 @@ class TransUnet():
 
         self.model.compile(optimizer=optimizer, loss=[TransUnet.segmentation_loss])
 
-    def train(self, training_dataset, save_path, validation_dataset=None, validation_samples=260, epochs=150, batch_size=24, show_history=True):
+    def train_validate(self, training_dataset, validation_dataset, save_path, validation_samples=260, epochs=150, batch_size=24, show_history=True):
         checkpoint_filepath = save_path + '/checkpoint/'
         model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
             filepath=checkpoint_filepath,
@@ -146,6 +144,23 @@ class TransUnet():
             plt.figure()
             plt.plot(history.history["loss"], label="training loss")
             plt.plot(history.history["val_loss"], label="validation loss")
+            plt.legend()
+            plt.show()
+
+        return history
+
+    def train(self, training_dataset, save_path, epochs=150, batch_size=24, show_history=True):
+            checkpoint_filepath = save_path + '/checkpoint/'
+        
+        steps_per_epoch = TRAINING_SAMPLES // batch_size
+        history = self.model.fit(training_dataset, epochs=epochs, batch_size=batch_size, verbose=1,
+                                    steps_per_epoch=steps_per_epoch, callbacks=[model_checkpoint_callback])
+
+        self.save_model(save_path)
+        print(f"Model saved in {saved_model_path}")
+        if show_history:
+            plt.figure()
+            plt.plot(history.history["loss"], label="training loss")
             plt.legend()
             plt.show()
 
