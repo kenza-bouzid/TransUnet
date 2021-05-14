@@ -17,8 +17,7 @@ class SegmentationHead(tfkl.Layer):
     def build(self, input_shape):
         self.conv = tfkl.Conv2D(
             filters=self.filters, kernel_size=self.kernel_size, padding="same", 
-            kernel_regularizer=tf.keras.regularizers.L1(L2_WEIGHT_DECAY),
-            activity_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY))
+            kernel_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY))
         self.upsampling = tfkl.UpSampling2D(
             size=self.upsampling_factor, interpolation="bilinear")
 
@@ -40,8 +39,7 @@ class Conv2DReLu(tfkl.Layer):
     def build(self, input_shape):
         self.conv = tfkl.Conv2D(
             filters=self.filters, kernel_size=self.kernel_size, strides=self.strides,
-            padding=self.padding, use_bias=False, kernel_regularizer=tf.keras.regularizers.L1(L2_WEIGHT_DECAY),
-            activity_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY))
+            padding=self.padding, use_bias=False, kernel_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY))
 
         self.bn = tfkl.BatchNormalization(momentum=0.9)
 

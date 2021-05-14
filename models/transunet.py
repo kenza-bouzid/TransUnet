@@ -3,7 +3,6 @@ import models.decoder_layers as decoder_layers
 import matplotlib.pyplot as plt
 import tensorflow_addons as tfa
 import models.utils as utils
-from medpy import metric
 import tensorflow as tf
 import math
 tfk = tf.keras
