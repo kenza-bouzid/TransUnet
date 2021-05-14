@@ -41,7 +41,7 @@ class Conv2DReLu(tfkl.Layer):
             filters=self.filters, kernel_size=self.kernel_size, strides=self.strides,
             padding=self.padding, use_bias=False, kernel_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY))
 
-        self.bn = tfkl.BatchNormalization(momentum=0.9, eps=1e-5)
+        self.bn = tfkl.BatchNormalization(momentum=0.9, epsilon=1e-5)
 
     def call(self, inputs):
         x = self.conv(inputs)
