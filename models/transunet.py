@@ -115,12 +115,9 @@ class TransUnet():
                 end_learning_rate,
                 power=0.9)
         optimizer = tf.keras.optimizers.SGD(learning_rate=lr, momentum=0.9)
-        cce = tfk.losses.CategoricalCrossentropy()
-        self.model.compile(optimizer=optimizer, loss={'loss_ce':cce, 'loss_dice':TransUnet.gen_dice}, loss_weights = [0.5,0.5], 
-                           metrics={'loss_ce': cce, 'loss_dice': TransUnet.gen_dice})
 
-        # loss = {'type': 'binary_crossentropy', 'coord': 'mse'},
-        # optimizer = 'sgd', metrics = {'type': 'accuracy', 'coord': 'mae'})
+        self.model.compile(optimizer=optimizer, loss=[
+                           TransUnet.segmentation_loss])
 
     def train_validate(self, training_dataset, validation_dataset, save_path, validation_samples=260, epochs=150, batch_size=24, show_history=True):
         checkpoint_filepath = save_path + '/checkpoint/'
@@ -177,9 +174,8 @@ class TransUnet():
 
     @tf.function
     def segmentation_loss(y_true, y_pred):
-        cross_entropy_loss = tf.losses.categorical_crossentropy(
-            y_true=y_true, y_pred=y_pred, from_logits=True)
-        
+        cce = tfk.losses.CategoricalCrossentropy(from_logits=True)
+        cross_entropy_loss = cce(y_true=y_true, y_pred=y_pred)
         dice_loss = TransUnet.gen_dice(y_true, y_pred)
         return 0.5 * cross_entropy_loss + 0.5 * dice_loss
 
