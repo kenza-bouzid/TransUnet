@@ -23,7 +23,7 @@ def evaluate_single_volume(image, label, model, classes=9):
   labels = tf.math.argmax(label, axis=-1).numpy()
 
   metric_list = []
-  for i in range(1, 9):
+  for i in range(1, classes):
     score = calculate_metric_percase(
           y_pred_vol == i, labels == i)
     metric_list.append(score)
