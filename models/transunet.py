@@ -186,7 +186,7 @@ class TransUnet():
         pred_tensor = tf.nn.softmax(y_pred)
         loss = 0.0
         for c in range(N_CLASSES):
-            loss += TransUnet.dice_per_class(y_true[:, c], pred_tensor[:, c])
+            loss += TransUnet.dice_per_class(y_true[:, :, :, c], pred_tensor[:, :, :, c])
         return loss/N_CLASSES
 
     @tf.function
