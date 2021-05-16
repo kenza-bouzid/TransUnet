@@ -230,12 +230,14 @@ class DataReader():
         axis = np.random.randint(0, 2)
         if axis == 1:
             # vertical flip 
-            modified = tf.image.random_flip_left_right(image=image, seed=seed)
-            m_label = tf.image.random_flip_left_right(image=m_label, seed=seed)
+            modified = tf.image.stateless_random_flip_left_right(image=image, seed=seed)
+            m_label = tf.image.stateless_random_flip_left_right(
+                image=m_label, seed=seed)
         else:
             # horizontal flip
-            modified = tf.image.random_flip_up_down(image=image, seed=seed)
-            m_label = tf.image.random_flip_up_down(image=m_label, seed=seed)
+            modified = tf.image.stateless_random_flip_up_down(
+                image=image, seed=seed)
+            m_label = tf.image.stateless_random_flip_up_down(image=m_label, seed=seed)
         
         #rot 90
         k_90 = np.random.randint(4)
