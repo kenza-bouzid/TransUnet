@@ -64,6 +64,8 @@ class TransUnet():
         y = encoder_layers.AddPositionEmbs(
             name="Transformer/posembed_input")(y)
 
+        y = tfkl.Dropout(0.1)(y)
+
         # Transformer/Encoder
         for n in range(self.n_layers):
             y, _ = encoder_layers.TransformerBlock(
@@ -174,8 +176,8 @@ class TransUnet():
 
     @tf.function
     def segmentation_loss(y_true, y_pred):
-        cross_entropy_loss = tf.losses.categorical_crossentropy(
-            y_true=y_true, y_pred=y_pred, from_logits=True)
+        cce = tfk.losses.CategoricalCrossentropy(from_logits=True)
+        cross_entropy_loss = cce(y_true=y_true, y_pred=y_pred)
         dice_loss = TransUnet.gen_dice(y_true, y_pred)
         return 0.5 * cross_entropy_loss + 0.5 * dice_loss
 
@@ -186,7 +188,7 @@ class TransUnet():
         pred_tensor = tf.nn.softmax(y_pred)
         loss = 0.0
         for c in range(N_CLASSES):
-            loss += TransUnet.dice_per_class(y_true[:, c], pred_tensor[:, c])
+            loss += TransUnet.dice_per_class(y_true[:, :, :, c], pred_tensor[:, :, :, c])
         return loss/N_CLASSES
 
     @tf.function

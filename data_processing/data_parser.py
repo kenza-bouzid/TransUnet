@@ -204,7 +204,6 @@ class DataReader():
         dataset = self.load_dataset_tpu(train_fns)
 
         # Create some additional training images by randomly flipping and
-        # increasing/decreasing the saturation of images in the training set.
         def data_augment(image, label):
             rand1, rand2 = np.random.uniform(size=(2, 1))
             if rand1 > 0.5:
@@ -212,7 +211,7 @@ class DataReader():
             elif rand2 > 0.5:
                 modified, m_label = self.random_rotate(image, label)
             else:
-              modified, m_label = image, label
+                modified, m_label = image, label
             m_label = tf.cast(m_label, tf.int32)
             m_label = tf.one_hot(m_label, depth=N_CLASSES)
             return modified, m_label
@@ -220,22 +219,27 @@ class DataReader():
         return augmented.repeat().shuffle(BUFFER_SIZE).batch(BATCH_SIZE, drop_remainder=True).prefetch(AUTOTUNE)
 
     def random_rotate(self, image, label):
-        rot = np.random.uniform(-np.pi/4, np.pi/4)
+        rot = np.random.uniform(-20*np.pi/180, 20*np.pi/180)
         modified = tfa.image.rotate(image, rot)
         m_label = tfa.image.rotate(label, rot)
         return modified, m_label
 
     def random_rot_flip(self, image, label):
-        seed = np.random.randint(1000)
-        k_90 = np.random.randint(4)
+        
         m_label = tf.reshape(label, (self.width, self.height, 1))
-        # vertical flip
-        modified = tf.image.random_flip_left_right(image=image, seed=seed)
-        m_label = tf.image.random_flip_left_right(image=m_label, seed=seed)
-        # horizontal flip
-        modified = tf.image.random_flip_up_down(image=modified, seed=seed)
-        m_label = tf.image.random_flip_up_down(image=m_label, seed=seed)
+        seed = np.random.randint(1000)
+        axis = np.random.randint(0, 2)
+        if axis == 1:
+            # vertical flip 
+            modified = tf.image.random_flip_left_right(image=image, seed=seed)
+            m_label = tf.image.random_flip_left_right(image=m_label, seed=seed)
+        else:
+            # horizontal flip
+            modified = tf.image.random_flip_up_down(image=image, seed=seed)
+            m_label = tf.image.random_flip_up_down(image=m_label, seed=seed)
+        
         #rot 90
+        k_90 = np.random.randint(4)
         modified = tf.image.rot90(image=modified, k=k_90)
         m_label = tf.image.rot90(image=m_label, k=k_90)
 
