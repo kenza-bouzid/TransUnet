@@ -16,7 +16,7 @@ TRAINING_SAMPLES = 2211
 
 
 class TransUnet():
-    def __init__(self, config):
+    def __init__(self, config, trainable=False):
         self.config = config
         self.image_size = config.image_size
         self.patch_size = config.patch_size
@@ -31,6 +31,7 @@ class TransUnet():
         self.upsampling_factor = config.upsampling_factor
         self.hybrid = config.hybrid
         self.model = self.build_model()
+        self.trainable = trainable
 
     def build_model(self):
         # Tranformer Encoder
@@ -62,7 +63,7 @@ class TransUnet():
         y = tfkl.Reshape(
             (y.shape[1] * y.shape[2], self.hidden_size))(y)
         y = encoder_layers.AddPositionEmbs(
-            name="Transformer/posembed_input", trainable=True)(y)
+            name="Transformer/posembed_input", trainable=self.trainable)(y)
 
         y = tfkl.Dropout(0.1)(y)
 
