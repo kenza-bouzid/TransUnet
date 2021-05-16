@@ -64,6 +64,8 @@ class TransUnet():
         y = encoder_layers.AddPositionEmbs(
             name="Transformer/posembed_input")(y)
 
+        y = tfkl.Dropout(0.1)(y)
+
         # Transformer/Encoder
         for n in range(self.n_layers):
             y, _ = encoder_layers.TransformerBlock(

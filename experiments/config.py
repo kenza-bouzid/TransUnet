@@ -52,7 +52,7 @@ def get_r50_b16():
     config.decoder_channels = [256, 128, 64, 16]
     config.n_skip = 0
     config.hybrid = True
-    config.grid = (16, 16)
+    config.grid = (14, 14)
     return config
 
 
