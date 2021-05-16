@@ -30,8 +30,8 @@ class TransUnet():
         self.kernel_size = config.kernel_size
         self.upsampling_factor = config.upsampling_factor
         self.hybrid = config.hybrid
-        self.model = self.build_model()
         self.trainable = trainable
+        self.model = self.build_model()
 
     def build_model(self):
         # Tranformer Encoder
