@@ -10,6 +10,7 @@ class AddPositionEmbs(tfkl.Layer):
     """Adds (optionally learned) positional embeddings to the inputs."""
     def __init__(self, trainable=False, **kwargs):
         super().__init__(trainable=trainable, **kwargs)
+        self.trainable = trainable
 
     def build(self, input_shape):
         assert (
@@ -21,7 +22,7 @@ class AddPositionEmbs(tfkl.Layer):
                 shape=(1, input_shape[1], input_shape[2])
             ),
             dtype="float32",
-            trainable=False,
+            trainable=self.trainable,
         )
 
     def call(self, inputs):

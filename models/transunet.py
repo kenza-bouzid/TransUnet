@@ -62,7 +62,7 @@ class TransUnet():
         y = tfkl.Reshape(
             (y.shape[1] * y.shape[2], self.hidden_size))(y)
         y = encoder_layers.AddPositionEmbs(
-            name="Transformer/posembed_input")(y)
+            name="Transformer/posembed_input", trainable=True)(y)
 
         y = tfkl.Dropout(0.1)(y)
 
