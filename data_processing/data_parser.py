@@ -7,7 +7,6 @@ import tensorflow_addons as tfa
 import tensorflow as tf
 import numpy as np
 import h5py
-import cv2
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 BATCH_SIZE = 24
