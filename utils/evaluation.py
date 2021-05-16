@@ -38,6 +38,7 @@ def inference(test_dataset, model, classes=9):
     metric = evaluate_single_volume(image, label, model)
     metric_list += np.array(metric)
 
+  print()
   metric_list /= len(test_dataset)
   for cls in range(1,classes):
     print(f"Class: {cls}, mean dice: {metric_list[cls-1][0]}, mean HD: {metric_list[cls-1][1]}")
