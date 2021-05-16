@@ -63,8 +63,8 @@ class DataWriter():
         # create a writer that'll store our data to disk
         writer = tf.io.TFRecordWriter(filename)
 
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-        out = self.parse_single_image(image=image_rgb, label=label)
+        image = np.stack([image, image, image], axis=-1)
+        out = self.parse_single_image(image=image, label=label)
         writer.write(out.SerializeToString())
 
         writer.close()
@@ -79,7 +79,7 @@ class DataWriter():
 
     def process_data(self, image, label):
         
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        image = np.stack([image, image, image], axis=-1)
         w, h, c = image.shape
         if w != self.width or h != self.height:
             image = zoom(
