@@ -23,7 +23,7 @@ def get_b16_none():
     config.n_layers = 12
     config.hidden_size = 768
     config.n_heads = 12
-    config.name = "b16_none"
+    config.name = "B16_None"
     config.mlp_dim = 3072
     config.dropout = 0.1
     config.filters = 9
@@ -36,7 +36,7 @@ def get_b16_none():
 def get_b16_cup():
     """Returns the ViT-B/16 configuration."""
     config = get_b16_none()
-    config.name = "b16_cup"
+    config.name = "B16_CUP"
     config.upsampling_factor = 1
     config.decoder_channels = [256, 128, 64, 16]
     config.n_skip = 0
@@ -47,7 +47,7 @@ def get_r50_b16():
     """Returns the Resnet50 + ViT-B/16 configuration."""
     config = get_b16_cup()
     config.image_size = 224
-    config.name = "R50-ViT-B_16"
+    config.name = "R50-B16_CUP"
     config.pretrained_filename = "R50+ViT-B_16.npz"
     config.decoder_channels = [256, 128, 64, 16]
     config.n_skip = 0
@@ -59,6 +59,6 @@ def get_r50_b16():
 def get_transunet():
     """Returns the Resnet50 + ViT-B/16 configuration."""
     config = get_r50_b16()
-    config.name = "transunet"
+    config.name = "TransUNet"
     config.n_skip = 3
     return config
