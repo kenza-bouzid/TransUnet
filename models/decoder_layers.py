@@ -7,6 +7,7 @@ tfkl = tfk.layers
 tfm = tf.math
 L2_WEIGHT_DECAY = 1e-4
 
+
 class SegmentationHead(tfkl.Layer):
     def __init__(self, name="seg_head", filters=9, kernel_size=1, upsampling_factor=16, ** kwargs):
         super(SegmentationHead, self).__init__(name=name, **kwargs)
@@ -16,8 +17,9 @@ class SegmentationHead(tfkl.Layer):
 
     def build(self, input_shape):
         self.conv = tfkl.Conv2D(
-            filters=self.filters, kernel_size=self.kernel_size, padding="same", 
-            kernel_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY))
+            filters=self.filters, kernel_size=self.kernel_size, padding="same",
+            kernel_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY), 
+            kernel_initializer=tfk.initializers.LecunNormal())
         self.upsampling = tfkl.UpSampling2D(
             size=self.upsampling_factor, interpolation="bilinear")
 
@@ -39,7 +41,8 @@ class Conv2DReLu(tfkl.Layer):
     def build(self, input_shape):
         self.conv = tfkl.Conv2D(
             filters=self.filters, kernel_size=self.kernel_size, strides=self.strides,
-            padding=self.padding, use_bias=False, kernel_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY))
+            padding=self.padding, use_bias=False, kernel_regularizer=tf.keras.regularizers.L2(L2_WEIGHT_DECAY), 
+            kernel_initializer="lecun_normal")
 
         self.bn = tfkl.BatchNormalization(momentum=0.9, epsilon=1e-5)
 
@@ -47,11 +50,12 @@ class Conv2DReLu(tfkl.Layer):
         x = self.conv(inputs)
         x = self.bn(x)
         x = tf.nn.relu(x)
-        return x 
+        return x
+
 
 class DecoderBlock(tfkl.Layer):
     def __init__(self, filters, **kwargs):
-        super().__init__( **kwargs)
+        super().__init__(**kwargs)
         self.filters = filters
 
     def build(self, input_shape):
@@ -68,6 +72,7 @@ class DecoderBlock(tfkl.Layer):
         x = self.conv2(x)
         return x
 
+
 class DecoderCup(tfkl.Layer):
     def __init__(self, decoder_channels, n_skip=3, **kwargs):
         super().__init__(**kwargs)
@@ -76,7 +81,8 @@ class DecoderCup(tfkl.Layer):
 
     def build(self, input_shape):
         self.conv_more = Conv2DReLu(filters=512, kernel_size=3)
-        self.blocks = [DecoderBlock(filters=out_ch) for out_ch in self.decoder_channels]
+        self.blocks = [DecoderBlock(filters=out_ch)
+                       for out_ch in self.decoder_channels]
 
     def call(self, hidden_states, features):
         x = self.conv_more(hidden_states)
@@ -86,7 +92,4 @@ class DecoderCup(tfkl.Layer):
             else:
                 skip = None
             x = decoder_block(x, skip=skip)
-        return x 
-    
-
-    
+        return x

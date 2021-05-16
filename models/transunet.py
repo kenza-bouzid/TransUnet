@@ -51,7 +51,7 @@ class TransUnet():
             y = x
             features = None
 
-        y = tf.keras.layers.Conv2D(
+        y = tfkl.Conv2D(
             filters=self.hidden_size,
             kernel_size=self.patch_size,
             strides=self.patch_size,
@@ -59,7 +59,7 @@ class TransUnet():
             name="embedding",
             trainable=False
         )(y)
-        y = tf.keras.layers.Reshape(
+        y = tfkl.Reshape(
             (y.shape[1] * y.shape[2], self.hidden_size))(y)
         y = encoder_layers.AddPositionEmbs(
             name="Transformer/posembed_input")(y)
