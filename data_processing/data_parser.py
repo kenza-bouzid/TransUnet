@@ -226,7 +226,7 @@ class DataReader():
     def random_rot_flip(self, image, label):
         
         m_label = tf.reshape(label, (self.width, self.height, 1))
-        seed = np.random.randint(1000)
+        seed = np.random.randint(0, 1000, size=(2))
         axis = np.random.randint(0, 2)
         if axis == 1:
             # vertical flip 
