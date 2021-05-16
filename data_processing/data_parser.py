@@ -14,8 +14,8 @@ N_CLASSES = 9
 BUFFER_SIZE = 72
 
 DATA_GC_URI_TRAIN = {
-    512: 'gs://aga_bucket/synapse-tfrecords-batch25/',
-    224: 'gs://aga_bucket/synapse-224-25/',
+    512: 'gs://aga_bucket/synapse-train-512/',
+    224: 'gs://aga_bucket/synapse-train-224/',
 }
 
 DATA_GC_URI_TEST = {
