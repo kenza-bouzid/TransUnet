@@ -23,7 +23,7 @@ def evaluate_single_volume(image, label, model, classes=9):
   labels = tf.math.argmax(label, axis=-1).numpy()
 
   metric_list = []
-  for i in range(1, 9):
+  for i in range(1, classes):
     score = calculate_metric_percase(
           y_pred_vol == i, labels == i)
     metric_list.append(score)
@@ -38,6 +38,7 @@ def inference(test_dataset, model, classes=9):
     metric = evaluate_single_volume(image, label, model)
     metric_list += np.array(metric)
 
+  print()
   metric_list /= len(test_dataset)
   for cls in range(1,classes):
     print(f"Class: {cls}, mean dice: {metric_list[cls-1][0]}, mean HD: {metric_list[cls-1][1]}")

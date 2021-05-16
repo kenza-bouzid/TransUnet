@@ -145,6 +145,9 @@ class TransUnet():
             plt.figure()
             plt.plot(history.history["loss"], label="training loss")
             plt.plot(history.history["val_loss"], label="validation loss")
+            plt.title(f"Loss for {self.name} model")
+            plt.xlabel("Epoch")
+            plt.ylabel("Loss")
             plt.legend()
             plt.show()
 
