@@ -58,7 +58,7 @@ class TransUnet():
             strides=self.patch_size,
             padding="valid",
             name="embedding",
-            trainable=False
+            trainable=self.trainable
         )(y)
         y = tfkl.Reshape(
             (y.shape[1] * y.shape[2], self.hidden_size))(y)
@@ -74,6 +74,7 @@ class TransUnet():
                 mlp_dim=self.mlp_dim,
                 dropout=self.dropout,
                 name=f"Transformer/encoderblock_{n}",
+                trainable=self.trainable
             )(y)
         y = tfkl.LayerNormalization(
             epsilon=1e-6, name="Transformer/encoder_norm"
@@ -209,7 +210,7 @@ class TransUnet():
     def resnet_embeddings(self, x):
         resnet50v2 = tfk.applications.ResNet50V2(
             include_top=False, input_shape=(self.image_size, self.image_size, 3))
-        resnet50v2.trainable = False
+        # resnet50v2.trainable = False
         _ = resnet50v2(x)
         layers = ["conv3_block4_preact_relu",
                   "conv2_block3_preact_relu",
