@@ -110,7 +110,7 @@ class TransUnet():
             steps_per_epoch = (
                 TRAINING_SAMPLES-validation_samples) // batch_size
             starter_learning_rate = 0.01
-            end_learning_rate = 1e-6
+            end_learning_rate = 0
             decay_steps = epochs * steps_per_epoch
             lr = tf.keras.optimizers.schedules.PolynomialDecay(
                 starter_learning_rate,
