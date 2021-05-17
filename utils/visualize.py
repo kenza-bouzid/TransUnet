@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def visualize(X, y, y_pred, sample_num, figsize=(20,20), cmap='viridis'):
+def visualize(X, y, y_pred, sample_num, figsize=(10,10), cmap='viridis'):
     y_pred_np = y_pred[sample_num,:,:,:]
     y_class = np.argmax(y_pred_np, axis=-1)
     x = X.numpy()[sample_num,:,:,:]
