@@ -210,7 +210,7 @@ class TransUnet():
     def resnet_embeddings(self, x):
         resnet50v2 = tfk.applications.ResNet50V2(
             include_top=False, input_shape=(self.image_size, self.image_size, 3))
-        # resnet50v2.trainable = False
+        resnet50v2.trainable = False
         _ = resnet50v2(x)
         layers = ["conv3_block4_preact_relu",
                   "conv2_block3_preact_relu",
