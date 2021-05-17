@@ -110,7 +110,7 @@ class TransUnet():
             steps_per_epoch = (
                 TRAINING_SAMPLES-validation_samples) // batch_size
             starter_learning_rate = 0.01
-            end_learning_rate = 0
+            end_learning_rate = 1e-6
             decay_steps = epochs * steps_per_epoch
             lr = tf.keras.optimizers.schedules.PolynomialDecay(
                 starter_learning_rate,
@@ -173,6 +173,9 @@ class TransUnet():
         if show_history:
             plt.figure()
             plt.plot(history.history["loss"], label="training loss")
+            plt.title(f"Loss for {self.name} model")
+            plt.xlabel("Epoch")
+            plt.ylabel("Loss")
             plt.legend()
             plt.show()
 
