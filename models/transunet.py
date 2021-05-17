@@ -16,7 +16,7 @@ TRAINING_SAMPLES = 2211
 
 
 class TransUnet():
-    def __init__(self, config, trainable=False):
+    def __init__(self, config, trainable=True):
         self.config = config
         self.image_size = config.image_size
         self.patch_size = config.patch_size
