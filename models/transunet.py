@@ -217,8 +217,9 @@ class TransUnet():
                   "conv1_conv"]
 
         features = []
-        for l in layers:
-            features.append(resnet50v2.get_layer(l).output)
+        if self.config.n_skip > 0:
+            for l in layers:
+                features.append(resnet50v2.get_layer(l).output)
         return resnet50v2, features
 
     def save_model_tpu(self, saved_model_path):
