@@ -1,9 +1,13 @@
 from os import name
 import tensorflow as tf 
 import tensorflow_addons as tfa
+from os.path import join as pjoin
+import numpy as np
 
 tfk = tf.keras 
 tfkl = tfk.layers
+
+
 
 class StdConv2D(tfkl.Conv2D):
     # def __init__(self, filters, kernel_size, strides, padding, data_format, dilation_rate, groups, activation, use_bias, kernel_initializer, bias_initializer, kernel_regularizer, bias_regularizer, activity_regularizer, kernel_constraint, bias_constraint, name,**kwargs):
@@ -58,12 +62,37 @@ class PreActBottleneck(tfkl.Layer):
         y = tf.nn.relu(residual + y)
         return y
 
+    def load_from(self, weights, n_block, n_unit):
+        conv1_weight = [weights[f"{n_block}/{n_unit}/conv1/kernel"]]
+        conv2_weight = [weights[f"{n_block}/{n_unit}/conv2/kernel"]]
+        conv3_weight = [weights[f"{n_block}/{n_unit}/conv3/kernel"]]
+
+        gn1_weight = [np.squeeze(weights[f"{n_block}/{n_unit}/gn1/scale"], axis=(0,1,2)), np.squeeze(weights[f"{n_block}/{n_unit}/gn1/bias"], axis=(0,1,2))]
+        gn2_weight = [np.squeeze(weights[f"{n_block}/{n_unit}/gn2/scale"], axis=(0,1,2)), np.squeeze(weights[f"{n_block}/{n_unit}/gn2/bias"], axis=(0,1,2))]
+        gn3_weight = [np.squeeze(weights[f"{n_block}/{n_unit}/gn3/scale"], axis=(0,1,2)), np.squeeze(weights[f"{n_block}/{n_unit}/gn3/bias"], axis=(0,1,2))]
+
+        self.conv1.set_weights(conv1_weight)
+        self.conv2.set_weights(conv2_weight)
+        self.conv3.set_weights(conv3_weight)
+
+        self.gn1.set_weights(gn1_weight)
+        self.gn2.set_weights(gn2_weight)
+        self.gn3.set_weights(gn3_weight)
+
+        if hasattr(self, 'downsample'):
+            proj_conv_weight = [weights[f"{n_block}/{n_unit}/conv_proj/kernel"]]
+            proj_gn_weight = [np.squeeze(weights[f"{n_block}/{n_unit}/gn_proj/scale"], axis=(0,1,2)), np.squeeze(weights[f"{n_block}/{n_unit}/gn_proj/bias"], axis=(0,1,2))]
+
+            self.downsample.set_weights(proj_conv_weight)
+            self.gn_proj.set_weights(proj_gn_weight)
+
 
 class ResNetV2(tfkl.Layer):
     """Implementation of Pre-activation (v2) ResNet mode."""
 
     def __init__(self, block_units, width_factor=1, trainable=True, name="resnet_v2", **kwargs):
         super().__init__(trainable=trainable, name=name, **kwargs)
+        self.block_units = block_units
         width = int(64 * width_factor)
         self.width = width
 
@@ -80,7 +109,7 @@ class ResNetV2(tfkl.Layer):
             ),
             tfk.Sequential(
                 [PreActBottleneck(cin=width*4, cout=width*8, cmid=width*2, stride=2, name="block2_unit1")] + 
-                [PreActBottleneck(cin=width*4, cout=width*8, cmid=width*2, name=f'block2_unit{i:d}') for i in range(2, block_units[1] + 1)]
+                [PreActBottleneck(cin=width*8, cout=width*8, cmid=width*2, name=f'block2_unit{i:d}') for i in range(2, block_units[1] + 1)]
             ),
             tfk.Sequential(
                 [PreActBottleneck(cin=width*8, cout=width*16, cmid=width*4, stride=2, name="block3_unit1")] + 
@@ -108,3 +137,11 @@ class ResNetV2(tfkl.Layer):
             features.append(feat)
         x = self.body[-1](x)
         return x, features[::-1]
+
+    def load_weights(self, res_weights):
+        self.root.layers[0].set_weights([res_weights["conv_root/kernel"]])
+        self.root.layers[1].set_weights([np.squeeze(res_weights["gn_root/scale"], axis=(0,1,2)), np.squeeze(res_weights["gn_root/bias"], axis=(0,1,2))])
+
+        for i in range(len(self.block_units)):
+            for j in range(self.block_units[i]):
+                self.body.layers[i].layers[j].load_from(res_weights, n_block=f"block{i+1}", n_unit=f"unit{j+1}")
