@@ -1,9 +1,11 @@
 import models.encoder_layers as encoder_layers
 import models.decoder_layers as decoder_layers
+from models.resnet_v2 import ResNetV2
 import matplotlib.pyplot as plt
 import tensorflow_addons as tfa
 import models.utils as utils
 import tensorflow as tf
+import numpy as np
 import math
 tfk = tf.keras
 tfkl = tfk.layers
@@ -44,10 +46,10 @@ class TransUnet():
             self.patch_size = self.image_size // 16 // grid_size[0]
             if self.patch_size == 0:
                 self.patch_size = 1
-
-            resnet50v2, features = self.resnet_embeddings(x)
-            y = resnet50v2.get_layer("conv4_block6_preact_relu").output
-            x = resnet50v2.input
+            
+            self.resnet50v2 = ResNetV2(block_units=self.config.resnet.n_layers)
+            # print(self.resnet50v2(x))
+            y, features = self.resnet50v2(x)
         else:
             y = x
             features = None
@@ -104,6 +106,8 @@ class TransUnet():
             fname, origin, cache_subdir="weights")
 
         utils.load_weights_numpy(self.model, local_filepath)
+        res_weights = np.load(local_filepath)
+        self.resnet50v2.load_weights(res_weights=res_weights)
 
     def compile(self, lr=None, epochs=150, batch_size=24, validation_samples=260):
         self.load_pretrained()

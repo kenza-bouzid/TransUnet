@@ -120,7 +120,7 @@ class ResNetV2(tfkl.Layer):
 
     def call(self, x):
         features = []
-        b, in_size, _, c = tf.shape(x)
+        in_size = x.shape[1]
         x = self.root(x)
         features.append(x)
         x = tfkl.MaxPool2D(pool_size=3, strides=2, padding="valid")(x)

@@ -53,6 +53,9 @@ def get_r50_b16():
     config.n_skip = 0
     config.hybrid = True
     config.grid = (14, 14)
+    config.resnet = ml_collections.ConfigDict()
+    config.resnet.n_layers = (3,4,9)
+    config.resnet.width_factor = 1
     return config
 
 
