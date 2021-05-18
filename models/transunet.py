@@ -48,7 +48,6 @@ class TransUnet():
                 self.patch_size = 1
             
             self.resnet50v2 = ResNetV2(block_units=self.config.resnet.n_layers)
-            # print(self.resnet50v2(x))
             y, features = self.resnet50v2(x)
         else:
             y = x
@@ -106,8 +105,9 @@ class TransUnet():
             fname, origin, cache_subdir="weights")
 
         utils.load_weights_numpy(self.model, local_filepath)
-        res_weights = np.load(local_filepath)
-        self.resnet50v2.load_weights(res_weights=res_weights)
+        if self.hybrid:
+            res_weights = np.load(local_filepath)
+            self.resnet50v2.load_weights(res_weights=res_weights)
 
     def compile(self, lr=None, epochs=150, batch_size=24, validation_samples=260):
         self.load_pretrained()
