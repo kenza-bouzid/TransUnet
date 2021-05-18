@@ -8,8 +8,9 @@ tfm = tf.math
 
 class AddPositionEmbs(tfkl.Layer):
     """Adds (optionally learned) positional embeddings to the inputs."""
-    def __init__(self, trainable=False, **kwargs):
+    def __init__(self, trainable=True, **kwargs):
         super().__init__(trainable=trainable, **kwargs)
+        self.trainable = trainable
 
     def build(self, input_shape):
         assert (
@@ -21,7 +22,7 @@ class AddPositionEmbs(tfkl.Layer):
                 shape=(1, input_shape[1], input_shape[2])
             ),
             dtype="float32",
-            trainable=False,
+            trainable=self.trainable,
         )
 
     def call(self, inputs):
@@ -29,7 +30,7 @@ class AddPositionEmbs(tfkl.Layer):
 
 
 class MultiHeadSelfAttention(tfkl.Layer):
-    def __init__(self, *args, trainable=False, n_heads, **kwargs):
+    def __init__(self, *args, trainable=True, n_heads, **kwargs):
         super().__init__(trainable=trainable, *args, **kwargs)
         self.n_heads = n_heads
 
@@ -81,7 +82,7 @@ class MultiHeadSelfAttention(tfkl.Layer):
 class TransformerBlock(tfkl.Layer):
     """Implements a Transformer block."""
 
-    def __init__(self, *args, n_heads, mlp_dim, dropout, trainable=False, **kwargs):
+    def __init__(self, *args, n_heads, mlp_dim, dropout, trainable=True, **kwargs):
         super().__init__(*args, trainable=trainable, **kwargs)
         self.n_heads = n_heads
         self.mlp_dim = mlp_dim

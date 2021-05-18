@@ -222,12 +222,13 @@ class DataReader():
         modified = tfa.image.rotate(image, rot)
         m_label = tfa.image.rotate(label, rot)
         return modified, m_label
-
+    
+    @tf.function
     def random_rot_flip(self, image, label):
-        
         m_label = tf.reshape(label, (self.width, self.height, 1))
         seed = np.random.randint(0, 1000, size=(2))
         axis = np.random.randint(0, 2)
+        tf.random.set_seed(seed[0])
         if axis == 1:
             # vertical flip 
             modified = tf.image.stateless_random_flip_left_right(image=image, seed=seed)

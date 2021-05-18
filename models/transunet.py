@@ -16,7 +16,7 @@ TRAINING_SAMPLES = 2211
 
 
 class TransUnet():
-    def __init__(self, config):
+    def __init__(self, config, trainable=True):
         self.config = config
         self.image_size = config.image_size
         self.patch_size = config.patch_size
@@ -30,6 +30,7 @@ class TransUnet():
         self.kernel_size = config.kernel_size
         self.upsampling_factor = config.upsampling_factor
         self.hybrid = config.hybrid
+        self.trainable = trainable
         self.model = self.build_model()
 
     def build_model(self):
@@ -57,12 +58,12 @@ class TransUnet():
             strides=self.patch_size,
             padding="valid",
             name="embedding",
-            trainable=False
+            trainable=self.trainable
         )(y)
         y = tfkl.Reshape(
             (y.shape[1] * y.shape[2], self.hidden_size))(y)
         y = encoder_layers.AddPositionEmbs(
-            name="Transformer/posembed_input")(y)
+            name="Transformer/posembed_input", trainable=self.trainable)(y)
 
         y = tfkl.Dropout(0.1)(y)
 
@@ -73,6 +74,7 @@ class TransUnet():
                 mlp_dim=self.mlp_dim,
                 dropout=self.dropout,
                 name=f"Transformer/encoderblock_{n}",
+                trainable=self.trainable
             )(y)
         y = tfkl.LayerNormalization(
             epsilon=1e-6, name="Transformer/encoder_norm"
@@ -172,6 +174,9 @@ class TransUnet():
         if show_history:
             plt.figure()
             plt.plot(history.history["loss"], label="training loss")
+            plt.title(f"Loss for {self.name} model")
+            plt.xlabel("Epoch")
+            plt.ylabel("Loss")
             plt.legend()
             plt.show()
 
@@ -212,8 +217,9 @@ class TransUnet():
                   "conv1_conv"]
 
         features = []
-        for l in layers:
-            features.append(resnet50v2.get_layer(l).output)
+        if self.config.n_skip > 0:
+            for l in layers:
+                features.append(resnet50v2.get_layer(l).output)
         return resnet50v2, features
 
     def save_model_tpu(self, saved_model_path):
