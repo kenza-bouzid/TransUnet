@@ -1,4 +1,3 @@
-from os import name
 import tensorflow as tf
 from tensorflow.python.ops.gen_nn_ops import Conv2D
 import tensorflow_addons as tfa

@@ -23,6 +23,7 @@ DATA_GC_URI_TEST = {
     224: 'gs://aga_bucket/synapse-test-224/',
 }
 
+
 class DataWriter():
     def __init__(self, src_path, dest_path="/", batch_size=25, height=512, width=512):
         self.src_path = src_path
@@ -77,14 +78,14 @@ class DataWriter():
             self.write_image_to_tfr(image, label, filename)
 
     def process_data(self, image, label):
-        
+
         image = np.stack([image, image, image], axis=-1)
         w, h, c = image.shape
         if w != self.width or h != self.height:
             image = zoom(
                 image, (self.width / w, self.height / h, 1), order=3)
             label = zoom(label, (self.width /
-                                         w, self.height / h), order=0)
+                                 w, self.height / h), order=0)
         return image, label
 
     def write_batch_tfrecords(self):
@@ -108,7 +109,8 @@ class DataWriter():
             data = h5py.File(self.src_path + filename, mode='r')
             image3d, label3d = data['image'][:].astype(
                 'float32'), data['label'][:].astype('float32')
-            writer = tf.io.TFRecordWriter(self.dest_path + filename[:-7] + '.tfrecords')
+            writer = tf.io.TFRecordWriter(
+                self.dest_path + filename[:-7] + '.tfrecords')
             for image, label in zip(image3d, label3d):
                 image, label = self.process_data(image, label)
                 out = self.parse_single_image(image=image, label=label)
@@ -122,14 +124,16 @@ class DataWriter():
             data = h5py.File(self.src_path + filename, mode='r')
             image3d, label3d = data['image'][:].astype(
                 'float32'), data['label'][:].astype('float32')
-            image3d_processed, label3d_processed  = [], []
+            image3d_processed, label3d_processed = [], []
             for image, label in zip(image3d, label3d):
                 image, label = self.process_data(image, label)
                 label = tf.one_hot(label, depth=N_CLASSES).numpy()
                 image3d_processed.append(image)
                 label3d_processed.append(label)
-            testdataset.append({'image': np.array(image3d_processed), 'label': np.array(label3d_processed)})
+            testdataset.append(
+                {'image': np.array(image3d_processed), 'label': np.array(label3d_processed)})
         return testdataset
+
 
 class DataReader():
 
@@ -222,25 +226,24 @@ class DataReader():
         modified = tfa.image.rotate(image, rot)
         m_label = tfa.image.rotate(label, rot)
         return modified, m_label
-    
+
     @tf.function
     def random_rot_flip(self, image, label):
         m_label = tf.reshape(label, (self.width, self.height, 1))
         seed = np.random.randint(0, 1000, size=(2))
         axis = np.random.randint(0, 2)
         tf.random.set_seed(seed[0])
+        stacked_image_label = tf.concat([image, label], axis=-1)
         if axis == 1:
-            # vertical flip 
-            modified = tf.image.stateless_random_flip_left_right(image=image, seed=seed)
-            m_label = tf.image.stateless_random_flip_left_right(
-                image=m_label, seed=seed)
+            # vertical flip
+            stacked_image_label = tf.image.stateless_random_flip_left_right(
+                image=stacked_image_label, seed=seed)
         else:
             # horizontal flip
-            modified = tf.image.stateless_random_flip_up_down(
-                image=image, seed=seed)
-            m_label = tf.image.stateless_random_flip_up_down(image=m_label, seed=seed)
-        
-        #rot 90
+            stacked_image_label = tf.image.stateless_random_flip_up_down(
+                image=stacked_image_label, seed=seed)
+        modified, m_label = stacked_image_label[:, :, :, :3], stacked_image_label[:, :, :, -1]
+        # rot 90
         k_90 = np.random.randint(4)
         modified = tf.image.rot90(image=modified, k=k_90)
         m_label = tf.image.rot90(image=m_label, k=k_90)
@@ -259,17 +262,18 @@ class DataReader():
         if validation:
             filenames.remove(
                 DATA_GC_URI_TRAIN[image_size] + "record_4.tfrecords")
-            filenames.remove(DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords")
+            filenames.remove(
+                DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords")
             train_fns = filenames
             validation_fns = [DATA_GC_URI_TRAIN[image_size] + "record_4.tfrecords",
-                            DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords"]
+                              DATA_GC_URI_TRAIN[image_size] + "record_11.tfrecords"]
 
             validation_dataset = self.load_dataset(
-                validation_fns).map(self.one_hot_encode, num_parallel_calls=AUTOTUNE).batch(BATCH_SIZE, drop_remainder = True).prefetch(AUTOTUNE)
-        
+                validation_fns).map(self.one_hot_encode, num_parallel_calls=AUTOTUNE).batch(BATCH_SIZE, drop_remainder=True).prefetch(AUTOTUNE)
+
             training_dataset = self.get_training_dataset(train_fns)
             return training_dataset, validation_dataset
-        
+
         return self.get_training_dataset(filenames)
 
     def get_test_data(self, image_size=224):
