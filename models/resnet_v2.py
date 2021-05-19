@@ -34,23 +34,19 @@ class PreActBottleneck(tfkl.Layer):
         cmid = cmid or cout//4
 
         self.gn1 = tfa.layers.GroupNormalization(
-            32, epsilon=1e-6, beta_regularizer=tfk.regularizers.L2(
-                L2_WEIGHT_DECAY))  # TODO check axis
+            32, epsilon=1e-6)  # TODO check axis
         self.conv1 = conv1x1(cmid, bias=False)
-        self.gn2 = tfa.layers.GroupNormalization(32, epsilon=1e-6, beta_regularizer=tfk.regularizers.L2(
-            L2_WEIGHT_DECAY))
+        self.gn2 = tfa.layers.GroupNormalization(32, epsilon=1e-6)
         # Original code has it on conv1!!
         self.conv2 = conv3x3(cmid, stride, bias=False)
-        self.gn3 = tfa.layers.GroupNormalization(32, epsilon=1e-6, beta_regularizer=tfk.regularizers.L2(
-            L2_WEIGHT_DECAY))
+        self.gn3 = tfa.layers.GroupNormalization(32, epsilon=1e-6)
         self.conv3 = conv1x1(cout, bias=False)
 
         if (stride != 1 or cin != cout):
             # Projection also with pre-activation according to paper.
             self.downsample = conv1x1(cout, stride, bias=False)
 
-            self.gn_proj = tfa.layers.GroupNormalization(cout, epsilon=1e-5, beta_regularizer=tfk.regularizers.L2(
-                L2_WEIGHT_DECAY))
+            self.gn_proj = tfa.layers.GroupNormalization(cout, epsilon=1e-5)
 
     def call(self, x):
 
@@ -110,8 +106,7 @@ class ResNetV2(tfk.Model):
         self.root = tfk.Sequential([
             tfkl.Conv2D(width, kernel_size=7, strides=2,
                         use_bias=False, padding="same", name="conv", kernel_regularizer=ws_reg),
-            tfa.layers.GroupNormalization(32, epsilon=1e-6, beta_regularizer=tfk.regularizers.L2(
-                L2_WEIGHT_DECAY)),
+            tfa.layers.GroupNormalization(32, epsilon=1e-6),
             tfkl.ReLU()
         ])
 
