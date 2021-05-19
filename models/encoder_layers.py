@@ -5,9 +5,12 @@ import tensorflow_addons as tfa
 tfk = tf.keras
 tfkl = tfk.layers
 tfm = tf.math
+L2_WEIGHT_DECAY = 1e-4
+
 
 class AddPositionEmbs(tfkl.Layer):
     """Adds (optionally learned) positional embeddings to the inputs."""
+
     def __init__(self, trainable=True, **kwargs):
         super().__init__(trainable=trainable, **kwargs)
         self.trainable = trainable
@@ -43,10 +46,14 @@ class MultiHeadSelfAttention(tfkl.Layer):
             )
         self.hidden_size = hidden_size
         self.projection_dim = hidden_size // n_heads
-        self.query_dense = tf.keras.layers.Dense(hidden_size, name="query")
-        self.key_dense = tf.keras.layers.Dense(hidden_size, name="key")
-        self.value_dense = tf.keras.layers.Dense(hidden_size, name="value")
-        self.combine_heads = tf.keras.layers.Dense(hidden_size, name="out")
+        self.query_dense = tfkl.Dense(
+            hidden_size, name="query")
+        self.key_dense = tfkl.Dense(
+            hidden_size, name="key")
+        self.value_dense = tfkl.Dense(
+            hidden_size, name="value")
+        self.combine_heads = tfkl.Dense(
+            hidden_size, name="out")
 
     # pylint: disable=no-self-use
     def attention(self, query, key, value):
@@ -93,34 +100,34 @@ class TransformerBlock(tfkl.Layer):
             n_heads=self.n_heads,
             name="MultiHeadDotProductAttention_1",
         )
-        self.mlpblock = tf.keras.Sequential(
+        self.mlpblock = tfk.Sequential(
             [
-                tf.keras.layers.Dense(
+                tfkl.Dense(
                     self.mlp_dim,
                     activation="linear",
-                    name=f"{self.name}/Dense_0",
+                    name=f"{self.name}/Dense_0"
                 ),
-                tf.keras.layers.Lambda(
-                    lambda x: tf.keras.activations.gelu(x, approximate=False)
+                tfkl.Lambda(
+                    lambda x: tfk.activations.gelu(x, approximate=False)
                 )
-                if hasattr(tf.keras.activations, "gelu")
-                else tf.keras.layers.Lambda(
+                if hasattr(tfk.activations, "gelu")
+                else tfkl.Lambda(
                     lambda x: tfa.activations.gelu(x, approximate=False)
                 ),
-                tf.keras.layers.Dropout(self.dropout),
-                tf.keras.layers.Dense(
+                tfkl.Dropout(self.dropout),
+                tfkl.Dense(
                     input_shape[-1], name=f"{self.name}/Dense_1"),
-                tf.keras.layers.Dropout(self.dropout),
+                tfkl.Dropout(self.dropout),
             ],
             name="MlpBlock_3",
         )
-        self.layernorm1 = tf.keras.layers.LayerNormalization(
+        self.layernorm1 = tfkl.LayerNormalization(
             epsilon=1e-6, name="LayerNorm_0"
         )
-        self.layernorm2 = tf.keras.layers.LayerNormalization(
+        self.layernorm2 = tfkl.LayerNormalization(
             epsilon=1e-6, name="LayerNorm_2"
         )
-        self.dropout = tf.keras.layers.Dropout(self.dropout)
+        self.dropout = tfkl.Dropout(self.dropout)
 
     def call(self, inputs, training):
         x = self.layernorm1(inputs)
