@@ -116,7 +116,7 @@ class TransformerBlock(tfkl.Layer):
                 ),
                 tfkl.Dropout(self.dropout),
                 tfkl.Dense(
-                    input_shape[-1], name=f"{self.name}/Dense_1"
+                    input_shape[-1], name=f"{self.name}/Dense_1"),
                 tfkl.Dropout(self.dropout),
             ],
             name="MlpBlock_3",
