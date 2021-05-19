@@ -242,11 +242,10 @@ class DataReader():
             # horizontal flip
             stacked_image_label = tf.image.stateless_random_flip_up_down(
                 image=stacked_image_label, seed=seed)
-        modified, m_label = stacked_image_label[:, :, :3], stacked_image_label[:, :, -1]
         # rot 90
         k_90 = np.random.randint(4)
-        modified = tf.image.rot90(image=modified, k=k_90)
-        m_label = tf.image.rot90(image=m_label, k=k_90)
+        stacked_image_label = tf.image.rot90(image=stacked_image_label, k=k_90)
+        modified, m_label = stacked_image_label[:, :, :3], stacked_image_label[:, :, -1]
 
         m_label = tf.reshape(m_label, (self.width, self.height))
         return modified, m_label
