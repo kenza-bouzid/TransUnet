@@ -47,13 +47,13 @@ class MultiHeadSelfAttention(tfkl.Layer):
         self.hidden_size = hidden_size
         self.projection_dim = hidden_size // n_heads
         self.query_dense = tfkl.Dense(
-            hidden_size, name="query", kernel_regularizer=tfk.regularizers.L2(L2_WEIGHT_DECAY))
+            hidden_size, name="query")
         self.key_dense = tfkl.Dense(
-            hidden_size, name="key", kernel_regularizer=tfk.regularizers.L2(L2_WEIGHT_DECAY))
+            hidden_size, name="key")
         self.value_dense = tfkl.Dense(
-            hidden_size, name="value", kernel_regularizer=tfk.regularizers.L2(L2_WEIGHT_DECAY))
+            hidden_size, name="value")
         self.combine_heads = tfkl.Dense(
-            hidden_size, name="out", kernel_regularizer=tfk.regularizers.L2(L2_WEIGHT_DECAY))
+            hidden_size, name="out")
 
     # pylint: disable=no-self-use
     def attention(self, query, key, value):
@@ -105,9 +105,7 @@ class TransformerBlock(tfkl.Layer):
                 tfkl.Dense(
                     self.mlp_dim,
                     activation="linear",
-                    name=f"{self.name}/Dense_0",
-                    kernel_regularizer=tfk.regularizers.L2(
-                        L2_WEIGHT_DECAY)
+                    name=f"{self.name}/Dense_0"
                 ),
                 tfkl.Lambda(
                     lambda x: tfk.activations.gelu(x, approximate=False)
@@ -118,8 +116,7 @@ class TransformerBlock(tfkl.Layer):
                 ),
                 tfkl.Dropout(self.dropout),
                 tfkl.Dense(
-                    input_shape[-1], name=f"{self.name}/Dense_1", 
-                    kernel_regularizer=tfk.regularizers.L2(L2_WEIGHT_DECAY)),
+                    input_shape[-1], name=f"{self.name}/Dense_1"
                 tfkl.Dropout(self.dropout),
             ],
             name="MlpBlock_3",
