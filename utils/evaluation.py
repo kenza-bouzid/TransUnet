@@ -49,3 +49,22 @@ def inference(test_dataset, model, classes=9):
     mean_hd95 = np.mean(metric_list, axis=0)[1]
     print(
         f'Testing performance in best val model: mean_dice : {performance} mean_hd95 : {mean_hd95}')
+
+
+def inference_latex_table_row(test_dataset, model, classes=9):
+    metric_list = 0.0
+
+    for data in tqdm(test_dataset):
+        image = data['image']
+        label = data['label']
+        metric = evaluate_single_volume(image, label, model)
+        metric_list += np.array(metric)
+
+    print()
+    metric_list /= len(test_dataset)
+    print(f'{model.name}', end=' ')
+    print(f'& {np.mean(metric_list, axis=0)[0]}', end=' ')
+    for cls in range(1, classes):
+        print(
+            f"& {metric_list[cls-1][0]} ", end=' ')
+    print('\\\\')
