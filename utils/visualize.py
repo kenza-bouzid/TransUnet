@@ -34,9 +34,9 @@ def visualize_non_empty_predictions(X, y, models, figsize=(10,10), cmap='viridis
         for i, model in enumerate(models):
             y_pred = model.model.predict(tf.expand_dims(X, axis=0))
             y_class = np.argmax(y_pred, axis=-1)
-            axis[i].imshow(x, cmap='gray') 
-            axis[i].imshow(y_class[0], cmap=cmap, alpha=0.3)
-            axis[i].set_title(f"{model.name} prediction")
+            axis[i+1].imshow(x, cmap='gray') 
+            axis[i+1].imshow(y_class[0], cmap=cmap, alpha=0.3)
+            axis[i+1].set_title(f"{model.name} prediction")
 
         plt.show()
 
