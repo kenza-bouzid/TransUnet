@@ -21,7 +21,7 @@ def visualize(X, y, y_pred, sample_num, figsize=(10, 10), cmap='viridis'):
     plt.show()
 
 
-def visualize_non_empty_predictions(X, y, models, figsize=(10, 10), cmap=pl.cm.Dark2):
+def visualize_non_empty_predictions(X, y, models, figsize=(10, 10), cmap=pl.cm.tab10_r):
     x = X.numpy()
     y_np = y.numpy()
     y_np = np.argmax(y_np, axis=-1)
