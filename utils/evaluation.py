@@ -63,8 +63,8 @@ def inference_latex_table_row(test_dataset, model, classes=9):
     print()
     metric_list /= len(test_dataset)
     print(f'{model.name}', end=' ')
-    print(f'& {np.mean(metric_list, axis=0)[0]}', end=' ')
+    print(f'& {np.mean(metric_list, axis=0)[0]:.2f}', end=' ')
     for cls in range(1, classes):
         print(
-            f"& {metric_list[cls-1][0]} ", end=' ')
+            f"& {metric_list[cls-1][0]:.2f} ", end=' ')
     print('\\\\')
