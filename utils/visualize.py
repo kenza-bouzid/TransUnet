@@ -38,7 +38,7 @@ def visualize_non_empty_predictions(X, y, models, figsize=(10,10), cmap='viridis
             y_class = np.argmax(y_pred, axis=-1)
             axis[i+1].imshow(x, cmap='gray') 
             axis[i+1].imshow(y_class[0], cmap=cmap, alpha=0.3)
-            axis[i+1].set_title(f"{model.name} prediction")
+            axis[i+1].set_title(f"{model.name}")
             axis[i+1].set_xticks([])
             axis[i+1].set_yticks([])
 
