@@ -30,6 +30,8 @@ def visualize_non_empty_predictions(X, y, models, figsize=(10,10), cmap='viridis
         axis[0].imshow(x, cmap='gray') 
         axis[0].imshow(y_np, cmap=cmap, alpha=0.3) 
         axis[0].set_title("original labels")
+        axis[0].set_xticks([])
+        axis[0].set_yticks([])
 
         for i, model in enumerate(models):
             y_pred = model.model.predict(tf.expand_dims(X, axis=0))
@@ -37,6 +39,8 @@ def visualize_non_empty_predictions(X, y, models, figsize=(10,10), cmap='viridis
             axis[i+1].imshow(x, cmap='gray') 
             axis[i+1].imshow(y_class[0], cmap=cmap, alpha=0.3)
             axis[i+1].set_title(f"{model.name} prediction")
+            axis[i+1].set_xticks([])
+            axis[i+1].set_yticks([])
 
         plt.show()
 
