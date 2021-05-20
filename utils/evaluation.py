@@ -54,7 +54,7 @@ def inference(test_dataset, model, classes=9):
 def inference_latex_table_row(test_dataset, model, classes=9):
     metric_list = 0.0
 
-    for data in tqdm(test_dataset):
+    for data in test_dataset:
         image = data['image']
         label = data['label']
         metric = evaluate_single_volume(image, label, model)
