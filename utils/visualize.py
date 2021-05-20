@@ -29,7 +29,7 @@ def visualize_non_empty_predictions(X, y, models, figsize=(10, 10), cmap=pl.cm.D
     if len(labels) != 1:
         # create cmap
         my_cmap = cmap(np.arange(cmap.N))
-        my_cmap[:, -1] = 0.5
+        my_cmap[:, -1] = 0.7
         my_cmap[0, -1] = 0.1
         my_cmap = ListedColormap(my_cmap)
 
