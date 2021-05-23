@@ -21,7 +21,7 @@ def visualize(X, y, y_pred, sample_num, figsize=(10, 10), cmap='viridis'):
     plt.show()
 
 
-def visualize_non_empty_predictions(X, y, models, figsize=(10, 10), cmap=pl.cm.tab10_r, alpha=0.8):
+def visualize_non_empty_predictions(X, y, models, figsize=(10, 10), cmap=pl.cm.tab10_r, alpha=0.8, titles=[]):
     x = X.numpy()
     y_np = y.numpy()
     y_np = np.argmax(y_np, axis=-1)
@@ -47,7 +47,10 @@ def visualize_non_empty_predictions(X, y, models, figsize=(10, 10), cmap=pl.cm.t
             y_class = np.argmax(y_pred, axis=-1)
             axis[i+1].imshow(x, cmap='gray')
             axis[i+1].imshow(y_class[0], cmap=my_cmap, alpha=alpha)
-            axis[i+1].set_title(f"{model.name}")
+            if titles != []:
+                axis[i+1].set_title(f"{model.name}")
+            else:
+                axis[i+1].set_title(f"{titles[i]}")
             axis[i+1].set_xticks([])
             axis[i+1].set_yticks([])
 
