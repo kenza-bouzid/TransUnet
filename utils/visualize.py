@@ -47,7 +47,7 @@ def visualize_non_empty_predictions(X, y, models, figsize=(10, 10), cmap=pl.cm.t
             y_class = np.argmax(y_pred, axis=-1)
             axis[i+1].imshow(x, cmap='gray')
             axis[i+1].imshow(y_class[0], cmap=my_cmap, alpha=alpha)
-            if titles != []:
+            if titles == []:
                 axis[i+1].set_title(f"{model.name}")
             else:
                 axis[i+1].set_title(f"{titles[i]}")
