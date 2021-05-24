@@ -272,10 +272,16 @@ class DataReader():
 
         return self.get_training_dataset(filenames)
 
-    def get_test_data(self, image_size=224, filenames=None):
+    def get_test_data(self, image_size=224, filenames=None, batch_size=None):
         if filenames is None:
             gcs_pattern = DATA_GC_URI_TEST[image_size] + "*.tfrecords"
             filenames = tf.io.gfile.glob(gcs_pattern)
+        
         test_dataset = self.load_dataset_tpu(filenames).map(
-            self.one_hot_encode, num_parallel_calls=AUTOTUNE).prefetch(AUTOTUNE)
+            self.one_hot_encode, num_parallel_calls=AUTOTUNE)
+
+        if batch_size is not None:
+            test_dataset  = test_dataset.batch(batch_size)
+        
+        test_dataset = test_dataset.prefetch(AUTOTUNE)
         return test_dataset
