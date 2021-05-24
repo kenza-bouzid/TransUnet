@@ -43,32 +43,33 @@ The  experiments were conducted on Synapse multi-organ segmentation dataset.
   │   └───train_npz
   │   		├── case0005_slice000.npz
   │   		└── *.npz
-  ├───data_processing
-  │   ├───dataset_synapse.py
-  │   ├───data_parser.py
-  │   └───__init__.py
-  ├───experiments
-  │	├───config.py
-  │   ├───create_tfds_records.ipynb
-  │   ├───data_exploration.ipynb
-  │   └───__init__.py
-  ├───models
-  │   ├───decoder_layers.py
-  │   ├───encoder_layers.py
-  │   ├───resnet_v2.py
-  │   ├───transunet.py
-  │   ├───utils.py
-  │   └───__init__.py
-  ├───synapse_ct_scans
-  │   ├───case0022.tfrecords
-  │   ├───case0025.tfrecords
-  │   └───case0029.tfrecords
-  └───utils
-  │   ├───evaluation.py
-  │   ├───visualize.py
-      └───__init__.py
+  ├── TransUNet
+      ├───data_processing
+      │   ├───dataset_synapse.py
+      │   ├───data_parser.py
+      │   └───__init__.py
+      ├───experiments
+      │	├───config.py
+      │   ├───create_tfds_records.ipynb
+      │   ├───data_exploration.ipynb
+      │   └───__init__.py
+      ├───models
+      │   ├───decoder_layers.py
+      │   ├───encoder_layers.py
+      │   ├───resnet_v2.py
+      │   ├───transunet.py
+      │   ├───utils.py
+      │   └───__init__.py
+      ├───synapse_ct_scans
+      │   ├───case0022.tfrecords
+      │   ├───case0025.tfrecords
+      │   └───case0029.tfrecords
+      └───utils
+          ├───evaluation.py
+          ├───visualize.py
+          └───__init__.py
   ```
-
+  
   **We provide some synapse CT scans written as Tfrecords for testing.**
 
 ## Train/Test
@@ -140,3 +141,5 @@ For recall ``TransUNet_demo.ipynp`` notebook provides an end to end demo that lo
 
 * [TransUNet](https://github.com/Beckschen/TransUNet)
 * [vit-keras](https://github.com/faustomorales/vit-keras)
+* [ResNetV2](https://github.com/tensorflow/tensorflow/blob/v2.5.0/tensorflow/python/keras/applications/resnet_v2.py#L28-L56)
+
