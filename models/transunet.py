@@ -1,12 +1,12 @@
 import models.encoder_layers as encoder_layers
 import models.decoder_layers as decoder_layers
 from models.resnet_v2 import ResNetV2
-import matplotlib.pyplot as plt
 import tensorflow_addons as tfa
+import matplotlib.pyplot as plt
 import models.utils as utils
 import tensorflow as tf
-import numpy as np
 import math
+
 tfk = tf.keras
 tfkl = tfk.layers
 tfm = tf.math
@@ -256,7 +256,6 @@ class TransUnet():
         with tpu_strategy.scope():
             load_options = tf.saved_model.LoadOptions(
                 experimental_io_device='/job:localhost')
-            # model = tf.keras.models.load_model(saved_model_path, options=load_options, custom_objects={'loss': vit.TransUnet.segmentation_loss})
             model = tf.keras.models.load_model(
                 saved_model_path, options=load_options, compile=False)
             self.model = model

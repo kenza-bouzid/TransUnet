@@ -1,11 +1,9 @@
-# pylint: disable=arguments-differ,missing-function-docstring,missing-class-docstring,unexpected-keyword-arg,no-value-for-parameter
 import tensorflow as tf
 import tensorflow_addons as tfa
 
 tfk = tf.keras
 tfkl = tfk.layers
 tfm = tf.math
-L2_WEIGHT_DECAY = 1e-4
 
 
 class AddPositionEmbs(tfkl.Layer):

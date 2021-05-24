@@ -1,4 +1,3 @@
-# pylint: disable=arguments-differ,missing-function-docstring,missing-class-docstring,unexpected-keyword-arg,no-value-for-parameter
 import tensorflow as tf
 import tensorflow_addons as tfa
 

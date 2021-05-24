@@ -252,7 +252,7 @@ class DataReader():
         label = tf.one_hot(label, depth=N_CLASSES)
         return (image, label)
 
-    def get_dataset_tpu_training(self, image_size=224, validation=True):
+    def get_dataset_training(self, image_size=224, validation=True):
         gcs_pattern = DATA_GC_URI_TRAIN[image_size] + "*.tfrecords"
         filenames = tf.io.gfile.glob(gcs_pattern)
         if validation:
