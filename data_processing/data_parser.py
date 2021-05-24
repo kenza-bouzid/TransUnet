@@ -281,7 +281,7 @@ class DataReader():
         test_dataset = self.load_dataset_tpu(filenames).map(
             self.one_hot_encode, num_parallel_calls=AUTOTUNE)
 
-        if batch_size is not None:
+        if not batch_size is None:
             test_dataset  = test_dataset.batch(batch_size)
         
         test_dataset = test_dataset.prefetch(AUTOTUNE)
