@@ -47,9 +47,14 @@ class TransUnet():
             if self.patch_size == 0:
                 self.patch_size = 1
             
-            resnet50v2, features = self.resnet_embeddings(x)
-            y = resnet50v2.get_layer("conv4_block6_preact_relu").output
-            x = resnet50v2.input
+            if self.trainable:
+                self.resnet50v2 = ResNetV2(
+                    block_units=self.config.resnet.n_layers)
+                y, features = self.resnet50v2(x)
+            else:
+                resnet50v2, features = self.resnet_embeddings(x)
+                y = resnet50v2.get_layer("conv4_block6_preact_relu").output
+                x = resnet50v2.input
         else:
             y = x
             features = None
