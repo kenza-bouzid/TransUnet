@@ -86,8 +86,8 @@ We provide 4 different architectures that can be selected from the config file i
 An instance of the model can be created and compiled/ trained as follows:
 
 ```python
-from models.transunet as transunet
-from data_processing.data_parser as DataReader
+from models.transunet import transunet
+from data_processing.data_parser import DataReader
 from experiments.config import get_transunet 
 
 ## Prepare data 
@@ -125,7 +125,7 @@ Visualize the segmentation masks as follows:
 
 ```python
 from utils.visualize import visualize_non_empty_predictions
-from data_processing.data_parser as DataReader
+from data_processing.data_parser import DataReader
 dr = DataReader(src_path="YOUR_SRC_PATH", height=224, width=224, depth=3)
 test_dataset = dr.get_test_data()
 
