@@ -4,6 +4,8 @@ This repo reproduces the results of  [TransUNet: Transformers Make Strong Encode
 
 A demo of TransUnet is available in [this colab notebook](https://colab.research.google.com/github/KenzaB27/TransUnet/blob/main/TransUNet_demo.ipynb#scrollTo=QwBIRuD4tAfc).
 
+A pretrained model trained on synapse dataset can be downloaded via [this link](https://drive.google.com/file/d/1ugXdSGGDJaOM-rOx_boQYoO71tTSe9k6/view?usp=sharing).
+
 Authors: *Agnieszka Miszkurka, Kenza Bouzid, Tobias Höppe*
 
 ## Environment
