@@ -1,5 +1,10 @@
 ml-collections
 tensorflow-addons
+opencv-python
+validators
+tensorflow 
+SimpleITK
 medpy
-# opencv-python
-# tensorflow or tensorflow-gpu
+numpy 
+scipy
+tqdm

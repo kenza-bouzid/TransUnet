@@ -1,19 +1,5 @@
 import ml_collections
 
-# image_size: int,
-# patch_size: int,
-# num_layers: int,
-# hidden_size: int,
-# num_heads: int,
-# name: str,
-# mlp_dim: int,
-# dropout: float,
-
-# filters: int,
-# kernel_size: int,
-# upsampling_factor: int
-
-
 def get_b16_none():
     """Returns the ViT-B/16 configuration."""
     config = ml_collections.ConfigDict()

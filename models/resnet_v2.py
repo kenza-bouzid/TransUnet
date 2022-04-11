@@ -1,12 +1,9 @@
-import tensorflow as tf
-from tensorflow.python.ops.gen_nn_ops import Conv2D
 import tensorflow_addons as tfa
-from os.path import join as pjoin
+import tensorflow as tf
 import numpy as np
 
 tfk = tf.keras
 tfkl = tfk.layers
-L2_WEIGHT_DECAY = 1e-4
 
 
 def ws_reg(kernel):

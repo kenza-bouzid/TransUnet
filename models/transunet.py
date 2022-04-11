@@ -1,12 +1,12 @@
 import models.encoder_layers as encoder_layers
 import models.decoder_layers as decoder_layers
 from models.resnet_v2 import ResNetV2
-import matplotlib.pyplot as plt
 import tensorflow_addons as tfa
+import matplotlib.pyplot as plt
 import models.utils as utils
 import tensorflow as tf
-import numpy as np
 import math
+
 tfk = tf.keras
 tfkl = tfk.layers
 tfm = tf.math
@@ -47,8 +47,14 @@ class TransUnet():
             if self.patch_size == 0:
                 self.patch_size = 1
             
-            self.resnet50v2 = ResNetV2(block_units=self.config.resnet.n_layers)
-            y, features = self.resnet50v2(x)
+            if self.trainable:
+                self.resnet50v2 = ResNetV2(
+                    block_units=self.config.resnet.n_layers)
+                y, features = self.resnet50v2(x)
+            else:
+                resnet50v2, features = self.resnet_embeddings(x)
+                y = resnet50v2.get_layer("conv4_block6_preact_relu").output
+                x = resnet50v2.input
         else:
             y = x
             features = None
@@ -105,15 +111,12 @@ class TransUnet():
             fname, origin, cache_subdir="weights")
 
         utils.load_weights_numpy(self.model, local_filepath)
-        if self.hybrid:
-            res_weights = np.load(local_filepath)
-            self.resnet50v2.load_weights(res_weights=res_weights)
 
-    def compile(self, lr=None, epochs=150, batch_size=24, validation_samples=260):
+    def compile(self, lr=None, epochs=150, batch_size=24, validation_samples=260, cyclic_lr=False):
         self.load_pretrained()
-        if lr is None:
-            steps_per_epoch = (
-                TRAINING_SAMPLES-validation_samples) // batch_size
+        steps_per_epoch = (
+            TRAINING_SAMPLES-validation_samples) // batch_size
+        if lr is None and not cyclic_lr:
             starter_learning_rate = 0.01
             end_learning_rate = 0
             decay_steps = epochs * steps_per_epoch
@@ -122,6 +125,15 @@ class TransUnet():
                 decay_steps,
                 end_learning_rate,
                 power=0.9)
+        elif cyclic_lr:
+            cycles_n = 25
+            step_size = epochs * steps_per_epoch / (cycles_n*2)
+            lr = tfa.optimizers.CyclicalLearningRate(
+                initial_learning_rate=1e-5,
+                maximal_learning_rate=1e-2,
+                step_size=step_size,
+                scale_fn=lambda x: 1.0
+            )
         optimizer = tf.keras.optimizers.SGD(learning_rate=lr, momentum=0.9)
 
         self.model.compile(optimizer=optimizer, loss=[
@@ -244,7 +256,6 @@ class TransUnet():
         with tpu_strategy.scope():
             load_options = tf.saved_model.LoadOptions(
                 experimental_io_device='/job:localhost')
-            # model = tf.keras.models.load_model(saved_model_path, options=load_options, custom_objects={'loss': vit.TransUnet.segmentation_loss})
             model = tf.keras.models.load_model(
                 saved_model_path, options=load_options, compile=False)
             self.model = model
