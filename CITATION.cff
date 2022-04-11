@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Bouzid
+    given-names: Kenza
+  - family-names: Höppe
+    given-names: Tobias
+  - family-names: Miszkurka
+    given-names: Agnieszka
+title: "TransUnet"
+version: 1.0
+date-released: 2021-05-24
